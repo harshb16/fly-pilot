@@ -5,7 +5,7 @@ export type EpisodeStatus =
   | "out_of_bounds"
   | "failed_approach";
 
-export type ControllerName = "manual" | "expert" | "expert_observing";
+export type ControllerName = "manual" | "expert" | "expert_observing" | "fly_control";
 
 export interface RunwayInfo {
   name: string;
@@ -38,6 +38,8 @@ export interface HelloMessage {
     male_cns_observing?: boolean;
     fly_controls_aircraft?: boolean;
     expert_is_biological?: boolean;
+    biological_learning?: boolean;
+    decoder_input?: string | null;
     note: string;
   };
   schedule?: {
@@ -91,6 +93,22 @@ export interface FlyObservingTelemetry {
     window_steps: number;
   };
   visual_rates_hz?: Record<string, number>;
+}
+
+export interface FlyControlTelemetry {
+  kind: string;
+  label?: string;
+  male_cns?: boolean;
+  biological_learning?: boolean;
+  expert_in_loop?: boolean;
+  aileron: number;
+  elevator: number;
+  rudder: number;
+  throttle: number;
+  gru_hidden_norm?: number;
+  gru_hidden_mean?: number;
+  decoded_neural_step?: number;
+  slew_alpha?: number;
 }
 
 export interface StateMessage {
@@ -150,6 +168,7 @@ export interface StateMessage {
   };
   expert?: ExpertTelemetry;
   fly_observing?: FlyObservingTelemetry;
+  fly_control?: FlyControlTelemetry;
 }
 
 export type ServerMessage = HelloMessage | StateMessage;

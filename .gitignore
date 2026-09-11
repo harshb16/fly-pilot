@@ -21,8 +21,12 @@ data/malecns/prepared/
 data/expert/*.parquet
 data/observing/*.parquet
 data/observing/*.meta.json
+data/decoder/*.parquet
+data/decoder/*.meta.json
 !data/expert/.gitkeep
 !data/observing/.gitkeep
+!data/decoder/.gitkeep
+!data/decoder/README.md
 !data/malecns/README.md
 !data/observing/README.md
 *.npz

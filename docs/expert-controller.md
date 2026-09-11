@@ -7,9 +7,10 @@ connectome, and not biological computation.** It exists only as:
 2. an expert-demonstration generator for a later imitation / decoder stage,
 3. a comparison benchmark for the eventual `MaleCNSController`.
 
-Do not describe this controller as fly-controlled. Later classes
-`MaleCNSController` and `TrainedMaleCNSController` are intentionally absent
-from this milestone.
+Do not describe this controller as fly-controlled. `TrainedMaleCNSController`
+(FLY CONTROL) is implemented separately as a frozen MaleCNS LIF plus an
+external GRU decoder — see `docs/decoder.md`. Untrained `MaleCNSController`
+is still absent and must not be stubbed.
 
 ## Design
 
@@ -137,14 +138,12 @@ The near-identical touchdown sink/xtk across seeds is the controller capturing o
 - Engine crank adds a few simulated seconds inside `Cessna172.reset()`; wall time is small.
 - Expert data is (state, classical-action) pairs. A later milestone must pair **MaleCNS activity** with these actions; do not train a “fly” decoder on this file alone and call it biological.
 
-## Integrating MaleCNS next
+## Integrating MaleCNS
 
-Recommended order, without pretending the expert *is* the fly:
+Milestone 5 closes the loop with `TrainedMaleCNSController` (external decoder,
+not biological learning). Keep this expert labelled as conventional:
 
-1. Keep `ExpertLandingController` as the labelled conventional baseline.
-2. Record expert Parquet as the **action** targets.
-3. Add retinal encoding of the Three.js (or a dedicated) view into MaleCNS photoreceptors.
-4. Run MaleCNS; log descending-neuron activity time-aligned with the expert actions.
-5. Train only an **output decoder** (activity → aileron/elevator/rudder/throttle) against those actions.
-6. Implement `MaleCNSController` (frozen connectome + decoder) and `TrainedMaleCNSController` as separate classes.
-7. Compare success rate and touchdown metrics against this expert, with the HUD stating which computation is in the loop.
+1. `ExpertLandingController` remains the labelled conventional baseline.
+2. Compact decoder recordings use this expert's inceptors as **targets only**.
+3. FLY CONTROL never blends those targets back into JSBSim commands.
+4. Untrained / hand-mapped `MaleCNSController` stays unimplemented.

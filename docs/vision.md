@@ -20,7 +20,9 @@ Keep these layers separate in code, HUD copy, and writing.
 | **MODELED** | Simplified LIF dynamics (`LIFConfig`) | Not measured physiology |
 | **CONVENTIONAL** | `ExpertLandingController` | Classical cascaded PID; not a fly |
 
-The airplane is still **not** controlled by MaleCNS.
+The airplane can be controlled by a **trained decoder** on MaleCNS activity
+(FLY CONTROL). EXPERT + FLY OBSERVING still exists: the expert flies, MaleCNS
+watches, no inceptors from the fly.
 
 ## Research (architectural reference only)
 

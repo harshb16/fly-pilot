@@ -33,11 +33,17 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
     approach = sandbox.approach
     mode = getattr(sandbox, "mode", sandbox.controller.name)
     observing = bool(getattr(sandbox, "observing", False))
-    if mode == "expert_observing":
+    if mode == "fly_control":
+        note = (
+            "FLY CONTROL: fixed MaleCNS LIF plus a trained temporal decoder writes "
+            "JSBSim inceptors. This is not biological synaptic learning. "
+            "ExpertLandingController is not in the loop. Decoder input is DN activity only."
+        )
+    elif mode == "expert_observing":
         note = (
             "EXPERT + FLY OBSERVING: ExpertLandingController (conventional autopilot) "
             "flies the Cessna. MaleCNS watches a rendered fly-view. The fly is NOT "
-            "controlling the aircraft. No decoder is trained in this milestone."
+            "controlling the aircraft."
         )
     elif sandbox.controller.name == "expert":
         note = (
@@ -47,12 +53,13 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
         )
     else:
         note = (
-            "Milestone 4 is a JSBSim landing sandbox plus optional MaleCNS visual "
-            "observation. The MaleCNS connectome does not write JSBSim inceptors."
+            "Milestone 5 landing sandbox. MANUAL and EXPERT are unchanged. "
+            "FLY CONTROL uses frozen MaleCNS plus an external trained decoder."
         )
+    fly_controls = mode == "fly_control"
     payload: dict[str, Any] = {
         "type": "hello",
-        "milestone": 4,
+        "milestone": 5,
         "controller": mode,
         "control_authority": sandbox.controller.name,
         "physics": "jsbsim",
@@ -75,10 +82,12 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
         "integrity": {
             "authoritative_physics": "JSBSim Cessna 172P",
             "visuals": "Three.js human view; Python cubemap is canonical MaleCNS input",
-            "male_cns": False,
+            "male_cns": fly_controls or observing,
             "male_cns_observing": observing,
-            "fly_controls_aircraft": False,
+            "fly_controls_aircraft": fly_controls,
             "expert_is_biological": False,
+            "biological_learning": False,
+            "decoder_input": "dn_windowed_rates" if fly_controls else None,
             "note": note,
         },
         "schedule": {
@@ -89,8 +98,9 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
         },
     }
     observer = getattr(sandbox, "observer", None)
-    if observing and observer is not None:
+    if observer is not None and (observing or fly_controls):
         payload["observing"] = observer.metadata()
+        payload["observing"]["controls_aircraft"] = fly_controls
     return payload
 
 
@@ -157,6 +167,26 @@ def state_payload(snapshot: SandboxSnapshot) -> dict[str, Any]:
     }
     if snapshot.controller_name == "expert" and snapshot.debug:
         payload["expert"] = snapshot.debug
-    if snapshot.observing:
+    if snapshot.ui_mode == "fly_control":
+        payload["fly_control"] = {
+            k: snapshot.debug[k]
+            for k in (
+                "kind",
+                "label",
+                "male_cns",
+                "biological_learning",
+                "expert_in_loop",
+                "aileron",
+                "elevator",
+                "rudder",
+                "throttle",
+                "gru_hidden_norm",
+                "gru_hidden_mean",
+                "decoded_neural_step",
+                "slew_alpha",
+            )
+            if k in snapshot.debug
+        }
+    if snapshot.observing or snapshot.ui_mode == "fly_control":
         payload["fly_observing"] = snapshot.fly_observing
     return payload

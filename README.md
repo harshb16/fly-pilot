@@ -2,10 +2,11 @@
 
 Use a real JSBSim Cessna 172 as the physics core of a browser landing sandbox, then later put the public MaleCNS fruit-fly connectome in the control loop.
 
-**Current milestone: 4 — visual embodiment (the fly watches the expert land).**
-`ExpertLandingController` still flies the Cessna. MaleCNS observes a rendered
-fly-view through a modeled retina. The connectome does **not** write inceptors.
-There is no aircraft decoder.
+**Current milestone: 5 — FLY CONTROL (fixed MaleCNS + trained temporal decoder).**
+`TrainedMaleCNSController` writes JSBSim inceptors from descending-neuron
+activity through an external GRU. That is **not** biological synaptic learning.
+`ExpertLandingController` remains a conventional autopilot and is not in the
+FLY CONTROL path.
 
 ## What currently works
 
@@ -17,6 +18,7 @@ There is no aircraft decoder.
 - Reset, successful-touchdown, crash, out-of-bounds, and failed-approach detection.
 - `ManualController` and `ExpertLandingController` (a **conventional autopilot**, not a fly brain).
 - **EXPERT + FLY OBSERVING**: same expert autoland while MaleCNS is stimulated from a Python cubemap / R1–R6 encoder. HUD shows fly-eye previews and neural rates. MaleCNS cannot control the airplane.
+- **FLY CONTROL**: frozen MaleCNS LIF + trained temporal decoder writes aileron / elevator / rudder / throttle. Decoder input is DN rates only.
 - Standalone MaleCNS v1.0 LIF simulator: prepare / query / demo / benchmark / replay.
 
 JSBSim is authoritative. The browser does not integrate aircraft motion.
@@ -58,6 +60,10 @@ python -m fly_pilot.brain.benchmark
 python -m fly_pilot.record_observing --episodes 3 --seed 0
 python -m fly_pilot.brain.replay_episode data/observing/expert_observing.parquet
 python -m fly_pilot.validate_vision
+python -m fly_pilot.record_decoder --successes 50 --seed 1000
+python -m fly_pilot.train_decoder
+python -m fly_pilot.evaluate_decoder
+python -m fly_pilot.evaluate_fly --episodes 20 --seed 2000
 ```
 
 ## Controls
@@ -74,7 +80,7 @@ python -m fly_pilot.validate_vision
 | C | Chase ↔ cockpit camera |
 | P | Pause / resume |
 | HUD sliders and buttons | Same inceptors, plus reset/camera |
-| MANUAL / EXPERT / EXPERT + FLY OBSERVING | Human vs conventional autoland vs expert + MaleCNS watching (not flying) |
+| MANUAL / EXPERT / EXPERT + FLY OBSERVING / FLY CONTROL | Human vs conventional autoland vs expert + MaleCNS watching vs trained decoder |
 
 Elevator uses **pilot stick convention**: positive is back-stick / nose-up. The backend negates this for JSBSim's `fcs/elevator-cmd-norm`.
 
@@ -101,8 +107,10 @@ These are different experiments and must stay labeled as such:
 6. **Milestone 4 observing** — modeled retina stimulates real R1–R6 cells while
    the expert flies; **no decoder**, **no MaleCNS→JSBSim path**
 
-The airplane is still not fly-controlled. See `docs/malecns.md` and
-`docs/vision.md`.
+7. **Milestone 5 FLY CONTROL** — fixed MaleCNS + trained temporal decoder.
+   External learning, not connectome plasticity.
+
+See `docs/malecns.md`, `docs/vision.md`, and `docs/decoder.md`.
 
 ## Layout
 
@@ -114,5 +122,7 @@ docs/              architecture, expert controller, MaleCNS, vision
 scripts/           install / start / test
 data/malecns/      gitignored cache (run `python -m fly_pilot.brain.prepare`)
 data/observing/    gitignored fly-observing-expert parquet
+data/decoder/      gitignored compact DN-rate training parquet
+docs/              architecture, expert controller, MaleCNS, vision, decoder
 .cursor/           Cloud environment
 ```

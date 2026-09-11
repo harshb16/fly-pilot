@@ -8,7 +8,7 @@ export interface HudHandlers {
   onResume: () => void;
   onCamera: (mode: CameraMode) => void;
   onSlider: (axis: keyof PilotControls, value: number, holding: boolean) => void;
-  onController: (name: "manual" | "expert" | "expert_observing") => void;
+  onController: (name: "manual" | "expert" | "expert_observing" | "fly_control") => void;
 }
 
 export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudModel) => void {
@@ -16,12 +16,13 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
     <div class="topbar">
       <div>
         <div class="brand">FlyPilot</div>
-        <div class="sub" id="milestone-sub">Milestone 4 · JSBSim Cessna 172 · MaleCNS observes, does not fly</div>
+        <div class="sub" id="milestone-sub">Milestone 5 · JSBSim Cessna 172 · MaleCNS + trained decoder</div>
       </div>
       <div class="controller-toggle">
         <button id="btn-manual" type="button" class="active">MANUAL</button>
         <button id="btn-expert" type="button">EXPERT</button>
         <button id="btn-observing" type="button">EXPERT + FLY OBSERVING</button>
+        <button id="btn-fly" type="button">FLY CONTROL</button>
       </div>
       <div id="status-pill" class="pill">connecting</div>
     </div>
@@ -65,6 +66,28 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
       <div class="readout"><span>R1–R6</span><strong id="n-r1">—</strong></div>
       <div class="readout"><span>DN N</span><strong id="n-dn">—</strong></div>
     </div>
+    <div class="panel fly-control" id="fly-panel" hidden>
+      <div class="fly-banner">FLY CONTROL</div>
+      <p class="observing-note">FIXED MALECNS + TRAINED TEMPORAL DECODER — not biological learning. ExpertLandingController is not in this path.</p>
+      <div class="eyes">
+        <figure>
+          <figcaption>Left eye</figcaption>
+          <canvas id="fly-left-ctl" width="48" height="32" aria-label="Left fly-eye preview"></canvas>
+        </figure>
+        <figure>
+          <figcaption>Right eye</figcaption>
+          <canvas id="fly-right-ctl" width="48" height="32" aria-label="Right fly-eye preview"></canvas>
+        </figure>
+      </div>
+      <div class="readout"><span>AIL</span><strong id="fc-ail">—</strong></div>
+      <div class="readout"><span>ELV</span><strong id="fc-elv">—</strong></div>
+      <div class="readout"><span>RDR</span><strong id="fc-rdr">—</strong></div>
+      <div class="readout"><span>THR</span><strong id="fc-thr">—</strong></div>
+      <div class="readout"><span>SPIKES/S</span><strong id="fc-spk">—</strong></div>
+      <div class="readout"><span>DN MEAN</span><strong id="fc-dn">—</strong><em>Hz</em></div>
+      <div class="readout"><span>GRU ‖h‖</span><strong id="fc-gru">—</strong></div>
+      <div class="readout"><span>DN N</span><strong id="fc-ndn">—</strong></div>
+    </div>
     <div class="panel controls">
       ${slider("aileron", "Aileron", -1, 1, 0)}
       ${slider("elevator", "Elevator", -1, 1, 0)}
@@ -94,6 +117,7 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
   root.querySelector("#btn-manual")?.addEventListener("click", () => handlers.onController("manual"));
   root.querySelector("#btn-expert")?.addEventListener("click", () => handlers.onController("expert"));
   root.querySelector("#btn-observing")?.addEventListener("click", () => handlers.onController("expert_observing"));
+  root.querySelector("#btn-fly")?.addEventListener("click", () => handlers.onController("fly_control"));
 
   for (const axis of ["aileron", "elevator", "rudder", "throttle"] as const) {
     const input = root.querySelector<HTMLInputElement>(`#${axis}`);
@@ -147,8 +171,8 @@ function renderHud(root: HTMLElement, model: HudModel): void {
   }
 
   const controller = state?.controller ?? model.hello?.controller ?? "manual";
-  const expertLike = controller === "expert" || controller === "expert_observing";
-  const shown = expertLike && state ? state.controls : model.localControls;
+  const flown = controller === "expert" || controller === "expert_observing" || controller === "fly_control";
+  const shown = flown && state ? state.controls : model.localControls;
   syncSlider(root, "aileron", shown.aileron);
   syncSlider(root, "elevator", shown.elevator);
   syncSlider(root, "rudder", shown.rudder);
@@ -157,10 +181,11 @@ function renderHud(root: HTMLElement, model: HudModel): void {
   root.querySelector("#btn-manual")?.classList.toggle("active", controller === "manual");
   root.querySelector("#btn-expert")?.classList.toggle("active", controller === "expert");
   root.querySelector("#btn-observing")?.classList.toggle("active", controller === "expert_observing");
+  root.querySelector("#btn-fly")?.classList.toggle("active", controller === "fly_control");
 
   const expertPanel = root.querySelector<HTMLElement>("#expert-panel");
   if (expertPanel) {
-    const show = expertLike;
+    const show = controller === "expert" || controller === "expert_observing";
     expertPanel.hidden = !show;
     if (show && state?.expert) {
       setText(root, "ex-phase", String(state.expert.phase).replaceAll("_", " "));
@@ -187,14 +212,36 @@ function renderHud(root: HTMLElement, model: HudModel): void {
     }
   }
 
+  const flyPanel = root.querySelector<HTMLElement>("#fly-panel");
+  if (flyPanel) {
+    const show = controller === "fly_control";
+    flyPanel.hidden = !show;
+    const fc = state?.fly_control;
+    const fly = state?.fly_observing;
+    if (show && fc) {
+      setText(root, "fc-ail", fmt(fc.aileron, 2));
+      setText(root, "fc-elv", fmt(fc.elevator, 2));
+      setText(root, "fc-rdr", fmt(fc.rudder, 2));
+      setText(root, "fc-thr", fmt(fc.throttle, 2));
+      setText(root, "fc-gru", fmt(fc.gru_hidden_norm, 2));
+    }
+    if (show && fly) {
+      setText(root, "fc-spk", fmt(fly.spikes_per_sec, 0));
+      setText(root, "fc-dn", fmt(fly.descending.mean_hz, 2));
+      setText(root, "fc-ndn", String(fly.n_descending));
+    }
+  }
+
   const sub = root.querySelector("#milestone-sub");
   if (sub) {
-    if (controller === "expert_observing") {
-      sub.textContent = "Milestone 4 · EXPERT + FLY OBSERVING · fly is not controlling";
+    if (controller === "fly_control") {
+      sub.textContent = "Milestone 5 · FLY CONTROL · fixed MaleCNS + trained temporal decoder";
+    } else if (controller === "expert_observing") {
+      sub.textContent = "Milestone 5 · EXPERT + FLY OBSERVING · fly is not controlling";
     } else if (controller === "expert") {
-      sub.textContent = "Milestone 4 · JSBSim Cessna 172 · conventional expert autopilot";
+      sub.textContent = "Milestone 5 · JSBSim Cessna 172 · conventional expert autopilot";
     } else {
-      sub.textContent = "Milestone 4 · JSBSim Cessna 172 · manual control";
+      sub.textContent = "Milestone 5 · JSBSim Cessna 172 · manual control";
     }
   }
 

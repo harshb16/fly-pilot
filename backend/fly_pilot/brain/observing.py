@@ -205,7 +205,8 @@ class ObservingMaleCNS:
             "n_neurons": self.connectome.n_neurons,
             "n_edges": self.connectome.n_edges,
             "integrity": (
-                "MaleCNS observes rendered vision. ExpertLandingController remains "
-                "the only source of JSBSim inceptors. No aircraft decoder is trained."
+                "ObservingMaleCNS encodes a rendered fly-view into MaleCNS LIF "
+                "dynamics. It has no act() and is not an aircraft controller. "
+                "FLY CONTROL, when selected, reads DN features via an external decoder."
             ),
         }

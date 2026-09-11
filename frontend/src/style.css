@@ -68,7 +68,9 @@ html, body, #app {
 
 .controller-toggle {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
+  max-width: 28rem;
 }
 
 .controller-toggle button {
@@ -186,6 +188,25 @@ button:hover { filter: brightness(0.95); }
 }
 
 .observing[hidden] { display: none; }
+
+.fly-control {
+  right: 16px;
+  bottom: 16px;
+  width: min(340px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: repeat(2, minmax(90px, 1fr));
+  gap: 8px 14px;
+}
+
+.fly-control[hidden] { display: none; }
+
+.fly-banner {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #7ad0a5;
+}
 
 .observing-banner {
   grid-column: 1 / -1;

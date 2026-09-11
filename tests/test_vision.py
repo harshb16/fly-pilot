@@ -25,6 +25,7 @@ from fly_pilot.brain.vision.mapping import PhotoreceptorMap
 from fly_pilot.brain.vision.scene import FlyViewPose, empty_atlas, render_cubemap_atlas
 from fly_pilot.brain.vision.stimulus import RetinalStimulusFrame
 from fly_pilot.controllers.expert import ExpertLandingController
+from fly_pilot.controllers.trained import TrainedMaleCNSController
 from fly_pilot.record_observing import record_episodes, synthetic_observer
 from fly_pilot.runway import Runway
 from fly_pilot.sandbox import LandingSandbox
@@ -160,6 +161,31 @@ def test_dn_feature_windows_and_sides() -> None:
     assert "right_mean_hz" in summary
 
 
+def test_dn_rates_use_available_samples_during_warmup() -> None:
+    """Early rates must divide by elapsed samples, not the full window length."""
+    observer = synthetic_observer(n_left=2, n_right=2, n_extra=6, seed=3)
+    spec = descending_population(observer.connectome)
+    ext = DescendingNeuronFeatureExtractor(spec, dt=0.02, windows=(5, 13))
+    fired = np.zeros(observer.connectome.n_neurons, dtype=bool)
+    assert spec.n > 0
+    fired[spec.indices[0]] = True
+    first = ext.update(fired)
+    # 1 spike in 1 × 20 ms sample → 50 Hz, not 1 / (5 × 0.02) = 10 Hz.
+    assert first["rates_w5"][0] == pytest.approx(1.0 / 0.02)
+    assert first["rates_w13"][0] == pytest.approx(1.0 / 0.02)
+    second = ext.update(fired)
+    assert second["rates_w5"][0] == pytest.approx(2.0 / 0.04)
+    assert second["rates_w13"][0] == pytest.approx(2.0 / 0.04)
+    # After the short window is full, 100 ms uses 5 samples; 260 ms is still warming.
+    for _ in range(3):
+        ext.update(np.zeros_like(fired))
+    full_short = ext.last_rates[5]
+    warming_long = ext.last_rates[13]
+    assert full_short[0] == pytest.approx(2.0 / 0.10)
+    assert warming_long[0] == pytest.approx(2.0 / 0.10)
+    assert ext.available_samples == 5
+
+
 def test_observing_brain_cannot_control_aircraft() -> None:
     assert CONTROLS_AIRCRAFT is False
     observer = synthetic_observer()
@@ -195,7 +221,7 @@ def test_expert_observing_uses_expert_controls_only() -> None:
     assert "NOT CONTROLLING" in snap.fly_observing["label"]
 
 
-def test_set_controller_expert_observing_and_rejects_fly_control() -> None:
+def test_set_controller_expert_observing_and_fly_control() -> None:
     sandbox = LandingSandbox()
     observer = synthetic_observer()
     sandbox.set_observer(observer)
@@ -204,8 +230,11 @@ def test_set_controller_expert_observing_and_rejects_fly_control() -> None:
     assert sandbox.controller.name == "expert"
     sandbox.set_controller("manual")
     assert sandbox.observing is False
-    with pytest.raises(ValueError, match="MaleCNS"):
-        sandbox.set_controller("fly_control")
+    ctl = TrainedMaleCNSController.untrained(observer, seed=1)
+    fly = LandingSandbox(controller=ctl, observer=observer)
+    assert fly.mode == "fly_control"
+    assert fly.controller.name == "fly_control"
+    assert not isinstance(fly.controller, ExpertLandingController)
 
 
 def test_recording_alignment_and_replay(tmp_path: Path) -> None:
