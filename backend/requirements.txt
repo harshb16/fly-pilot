@@ -1,0 +1,5 @@
+jsbsim>=1.2.0
+numpy>=1.26
+scipy>=1.11
+websockets>=12.0
+pytest>=8.0
