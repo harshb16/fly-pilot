@@ -18,8 +18,9 @@ Three.js cockpit camera
 
 Milestone 1 implements the plant, transport, visualization, and a human controller.
 Milestone 2 adds `ExpertLandingController`, a **conventional classical autopilot**
-used as a solvability baseline and expert-data generator. MaleCNS is still not
-in the loop.
+used as a solvability baseline and expert-data generator.
+Milestone 3 adds a **standalone** MaleCNS-derived LIF simulator. The connectome
+is still not in the aircraft loop, and there is no retina or decoder.
 
 ## Runtime processes
 
@@ -50,6 +51,7 @@ in the loop.
 | `episode.py` | Land / crash / OOB / failed-approach rules |
 | `evaluate.py` | Headless expert evaluation |
 | `record_expert.py` | Parquet expert demonstrations |
+| `brain/` | Standalone MaleCNS prepare / LIF / query / demo / benchmark |
 | `sandbox.py` | Glue: controller → FDM → episode → snapshot |
 | `protocol.py` | JSON schema |
 | `server.py` | `websockets` server + sim loop |
@@ -108,11 +110,12 @@ Vanilla TypeScript. No React.
 
 ## What is explicitly out of Milestone 2
 
-- MaleCNS download / sparse LIF / retina
-- Training (CMA-ES, RL, PyTorch)
+- MaleCNS in the aircraft loop, retina, training
 - Pretending the expert autopilot is a fly
 - Photoreal scenery
 - React
 - Wind
 
-Those belong in later milestones, with the connectome remaining a real component if the project is described as fly-controlled. See `docs/expert-controller.md`.
+Milestone 3 implements standalone MaleCNS prepare/LIF/demo only. See `docs/malecns.md`.
+`MaleCNSController` / retina / decoder remain later work. The connectome must
+stay a real component if the project is described as fly-controlled.

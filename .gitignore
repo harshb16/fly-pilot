@@ -16,9 +16,12 @@ htmlcov/
 .idea/
 .vscode/
 artifacts/
-data/malecns/
+data/malecns/raw/
+data/malecns/prepared/
 data/expert/*.parquet
 !data/expert/.gitkeep
+!data/malecns/README.md
 *.npz
 *.feather
+*.parquet
 .env
