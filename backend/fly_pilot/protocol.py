@@ -31,8 +31,15 @@ def controls_from_message(data: dict[str, Any]) -> AircraftControls:
 def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
     runway: Runway = sandbox.runway
     approach = sandbox.approach
-    controller_name = sandbox.controller.name
-    if controller_name == "expert":
+    mode = getattr(sandbox, "mode", sandbox.controller.name)
+    observing = bool(getattr(sandbox, "observing", False))
+    if mode == "expert_observing":
+        note = (
+            "EXPERT + FLY OBSERVING: ExpertLandingController (conventional autopilot) "
+            "flies the Cessna. MaleCNS watches a rendered fly-view. The fly is NOT "
+            "controlling the aircraft. No decoder is trained in this milestone."
+        )
+    elif sandbox.controller.name == "expert":
         note = (
             "ExpertLandingController is a conventional classical autopilot used as a "
             "solvability baseline and expert-data generator. It is not MaleCNS and is "
@@ -40,13 +47,14 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
         )
     else:
         note = (
-            "Milestone 2 is a human-flown landing sandbox plus a conventional expert "
-            "autopilot. The MaleCNS connectome is not in the loop."
+            "Milestone 4 is a JSBSim landing sandbox plus optional MaleCNS visual "
+            "observation. The MaleCNS connectome does not write JSBSim inceptors."
         )
-    return {
+    payload: dict[str, Any] = {
         "type": "hello",
-        "milestone": 2,
-        "controller": controller_name,
+        "milestone": 4,
+        "controller": mode,
+        "control_authority": sandbox.controller.name,
         "physics": "jsbsim",
         "aircraft": "c172p",
         "runway": {
@@ -66,23 +74,38 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
         },
         "integrity": {
             "authoritative_physics": "JSBSim Cessna 172P",
-            "visuals": "Three.js rendering of JSBSim state",
+            "visuals": "Three.js human view; Python cubemap is canonical MaleCNS input",
             "male_cns": False,
+            "male_cns_observing": observing,
+            "fly_controls_aircraft": False,
             "expert_is_biological": False,
             "note": note,
         },
+        "schedule": {
+            "physics_hz": 120.0,
+            "vision_hz": 50.0,
+            "neural_hz": 50.0,
+            "state_broadcast_hz": 30.0,
+        },
     }
+    observer = getattr(sandbox, "observer", None)
+    if observing and observer is not None:
+        payload["observing"] = observer.metadata()
+    return payload
 
 
 def state_payload(snapshot: SandboxSnapshot) -> dict[str, Any]:
     obs = snapshot.observation
     ep = snapshot.episode
     extra = obs.extra or {}
+    mode = snapshot.ui_mode
     payload: dict[str, Any] = {
         "type": "state",
         "sim_time": obs.sim_time_s,
         "paused": snapshot.paused,
-        "controller": snapshot.controller_name,
+        "controller": mode,
+        "control_authority": snapshot.controller_name,
+        "observing": snapshot.observing,
         "spawn_seed": snapshot.spawn_seed,
         "position": {
             "lat_deg": obs.lat_deg,
@@ -134,4 +157,6 @@ def state_payload(snapshot: SandboxSnapshot) -> dict[str, Any]:
     }
     if snapshot.controller_name == "expert" and snapshot.debug:
         payload["expert"] = snapshot.debug
+    if snapshot.observing:
+        payload["fly_observing"] = snapshot.fly_observing
     return payload

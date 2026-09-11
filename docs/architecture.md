@@ -19,16 +19,22 @@ Three.js cockpit camera
 Milestone 1 implements the plant, transport, visualization, and a human controller.
 Milestone 2 adds `ExpertLandingController`, a **conventional classical autopilot**
 used as a solvability baseline and expert-data generator.
-Milestone 3 adds a **standalone** MaleCNS-derived LIF simulator. The connectome
-is still not in the aircraft loop, and there is no retina or decoder.
+Milestone 3 adds a **standalone** MaleCNS-derived LIF simulator.
+Milestone 4 adds **visual observation**: a fly-view renderer and R1–R6 encoder
+drive MaleCNS while the expert still flies. There is still **no** aircraft
+decoder and MaleCNS still does **not** write inceptors. See `docs/vision.md`.
 
 ## Runtime processes
 
 1. **`fly_pilot.server`** (Python, port 8765)
    - Owns one `LandingSandbox`.
    - Steps JSBSim in wall-clock time (FDM dt = 1/120 s, catch-up capped).
-   - Accepts JSON commands: `controls`, `reset`, `pause`, `resume`, `set_controller`.
+   - Accepts JSON commands: `controls`, `reset`, `pause`, `resume`, `set_controller`
+     (`manual` | `expert` | `expert_observing`).
    - Broadcasts `hello` once per client and `state` at ~30 Hz.
+   - In `expert_observing`, steps MaleCNS on the 50 Hz sim-time scheduler after
+     each physics tick that crosses a neural instant. Neural output is telemetry
+     only.
 2. **Vite / Three.js** (port 5173)
    - Proxies `/ws` to the backend.
    - Sends manual inceptors.
@@ -51,8 +57,9 @@ is still not in the aircraft loop, and there is no retina or decoder.
 | `episode.py` | Land / crash / OOB / failed-approach rules |
 | `evaluate.py` | Headless expert evaluation |
 | `record_expert.py` | Parquet expert demonstrations |
-| `brain/` | Standalone MaleCNS prepare / LIF / query / demo / benchmark |
-| `sandbox.py` | Glue: controller → FDM → episode → snapshot |
+| `brain/` | MaleCNS prepare / LIF / vision encoder / observing / replay |
+| `record_observing.py` | Parquet fly-observing-expert dataset (not a decoder) |
+| `sandbox.py` | Glue: controller → FDM → optional MaleCNS observe → episode |
 | `protocol.py` | JSON schema |
 | `server.py` | `websockets` server + sim loop |
 
@@ -74,9 +81,20 @@ class Controller:
 
 JSBSim elevator sign conversion happens only in `aircraft.py`.
 
-`LandingSandbox.set_controller("manual"|"expert")` is the only legal switch.
-MaleCNS names are refused. `ExpertLandingController.telemetry()` is labelled
+`LandingSandbox.set_controller("manual"|"expert"|"expert_observing")` is the
+only legal switch. Names that would imply fly control (`malecns`,
+`fly_control`, …) are refused. `expert_observing` still instantiates
+`ExpertLandingController` as the sole `act()` source; `ObservingMaleCNS` has
+no `act()`. `ExpertLandingController.telemetry()` is labelled
 `kind: conventional_autopilot`.
+
+Clocks (simulated time, never `requestAnimationFrame`):
+
+| Clock | Hz |
+|---|---:|
+| JSBSim | 120 |
+| Vision / retinal / MaleCNS / log | 50 |
+| State broadcast | ~30 |
 
 ### Coordinate frames
 
@@ -105,17 +123,18 @@ Vanilla TypeScript. No React.
 - `input.ts` — keys + HUD sliders
 - `aircraftMesh.ts` — low-poly high-wing Cessna; `applyJsbsimPose`
 - `runwayMesh.ts` — pavement, markings, chevrons, hills
-- `scene.ts` — lights, fog, chase / cockpit cameras
-- `hud.ts` — telemetry, MANUAL/EXPERT selector, expert-autopilot readouts, integrity copy
+- `scene.ts` — lights, fog, chase / cockpit cameras (human view)
+- `flyEye.ts` — off-screen wide-FOV previews; not the canonical MaleCNS input
+- `hud.ts` — telemetry, MANUAL / EXPERT / EXPERT+FLY OBSERVING, integrity copy
 
-## What is explicitly out of Milestone 2
+## What is explicitly out of Milestone 4
 
-- MaleCNS in the aircraft loop, retina, training
+- MaleCNS writing JSBSim inceptors (`MaleCNSController` / decoder)
 - Pretending the expert autopilot is a fly
-- Photoreal scenery
+- Claiming biological steering from left/right retinal differences
+- Photoreal scenery / exact compound-eye optics
 - React
 - Wind
 
-Milestone 3 implements standalone MaleCNS prepare/LIF/demo only. See `docs/malecns.md`.
-`MaleCNSController` / retina / decoder remain later work. The connectome must
-stay a real component if the project is described as fly-controlled.
+See `docs/malecns.md` and `docs/vision.md`. The connectome must stay a real
+component if a later milestone is described as fly-controlled.

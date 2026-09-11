@@ -5,7 +5,7 @@ export type EpisodeStatus =
   | "out_of_bounds"
   | "failed_approach";
 
-export type ControllerName = "manual" | "expert";
+export type ControllerName = "manual" | "expert" | "expert_observing";
 
 export interface RunwayInfo {
   name: string;
@@ -21,6 +21,7 @@ export interface HelloMessage {
   type: "hello";
   milestone: number;
   controller: ControllerName | string;
+  control_authority?: string;
   physics: string;
   aircraft: string;
   runway: RunwayInfo;
@@ -34,8 +35,16 @@ export interface HelloMessage {
     authoritative_physics: string;
     visuals: string;
     male_cns: boolean;
+    male_cns_observing?: boolean;
+    fly_controls_aircraft?: boolean;
     expert_is_biological?: boolean;
     note: string;
+  };
+  schedule?: {
+    physics_hz: number;
+    vision_hz: number;
+    neural_hz: number;
+    state_broadcast_hz: number;
   };
 }
 
@@ -51,11 +60,46 @@ export interface ExpertTelemetry {
   heading_error_deg?: number;
 }
 
+export interface FlyObservingTelemetry {
+  controlling: boolean;
+  label: string;
+  mode?: string;
+  neural_step?: number | null;
+  sim_time_s?: number | null;
+  n_spikes: number;
+  spikes_per_sec: number;
+  n_outgoing_edges?: number;
+  spike_checksum?: string;
+  n_r1r6: number;
+  n_descending: number;
+  retina: {
+    mean_luminance: number;
+    mean_current: number;
+    mean_temporal: number;
+    left_mean_luminance: number;
+    right_mean_luminance: number;
+    current_sha256?: string;
+  };
+  descending: {
+    n_descending: number;
+    n_left: number;
+    n_right: number;
+    mean_hz: number;
+    left_mean_hz: number;
+    right_mean_hz: number;
+    max_hz: number;
+    window_steps: number;
+  };
+  visual_rates_hz?: Record<string, number>;
+}
+
 export interface StateMessage {
   type: "state";
   sim_time: number;
   paused: boolean;
   controller: ControllerName | string;
+  control_authority?: string;
+  observing?: boolean;
   spawn_seed?: number | null;
   position: {
     lat_deg: number;
@@ -105,6 +149,7 @@ export interface StateMessage {
     touchdown_fpm: number | null;
   };
   expert?: ExpertTelemetry;
+  fly_observing?: FlyObservingTelemetry;
 }
 
 export type ServerMessage = HelloMessage | StateMessage;

@@ -19,8 +19,12 @@ artifacts/
 data/malecns/raw/
 data/malecns/prepared/
 data/expert/*.parquet
+data/observing/*.parquet
+data/observing/*.meta.json
 !data/expert/.gitkeep
+!data/observing/.gitkeep
 !data/malecns/README.md
+!data/observing/README.md
 *.npz
 *.feather
 *.parquet

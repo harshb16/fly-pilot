@@ -10,6 +10,7 @@ from typing import Any
 
 from websockets.asyncio.server import ServerConnection, serve
 
+from fly_pilot.brain.data import DataError
 from fly_pilot.protocol import (
     controls_from_message,
     hello_payload,
@@ -72,7 +73,7 @@ class SimServer:
             name = str(data.get("name", "manual"))
             try:
                 self.sandbox.set_controller(name)
-            except ValueError as exc:
+            except (ValueError, DataError) as exc:
                 LOGGER.warning("%s", exc)
                 return
             self._push_hello = True

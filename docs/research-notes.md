@@ -180,6 +180,7 @@ Not taken: FlightGear socket output, OpenAI Gym API, reward shaping (no training
 - Fly64 dashboard and technical notes for how *not* to over-claim physiology.
 
 Milestone 3 implemented the real Feather tables as a **standalone** LIF
-simulator (`docs/malecns.md`). Retina, descending-neuron decoder, and
-aircraft coupling remain later work. Keep sparse CSR/CSC; do not substitute
-a dense MLP for the graph.
+simulator (`docs/malecns.md`). Milestone 4 adds a **modeled** retina and
+one-way observation (`docs/vision.md`). Do not copy Fly64 source. Keep sparse
+CSR/CSC; do not substitute a dense MLP for the graph. Do not map DNs onto
+airplane controls in this milestone.

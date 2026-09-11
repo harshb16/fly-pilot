@@ -72,7 +72,8 @@ def test_hello_payload_states_no_malecns() -> None:
     assert payload["male_cns"] is False if "male_cns" in payload else payload["integrity"]["male_cns"] is False
     assert payload["integrity"]["expert_is_biological"] is False
     assert payload["physics"] == "jsbsim"
-    assert payload["milestone"] == 2
+    assert payload["milestone"] == 4
+    assert payload["integrity"]["fly_controls_aircraft"] is False
 
 
 def test_state_payload_includes_expert_debug_when_present() -> None:
