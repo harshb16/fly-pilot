@@ -1,8 +1,9 @@
 """Standalone MaleCNS-derived spiking-network simulation.
 
 This package loads the measured MaleCNS v1.0 connectome and runs a simplified
-leaky-integrate-and-fire model on that anatomy. It is not connected to the
-aircraft, does not implement retinal vision, and does not train a decoder.
+leaky-integrate-and-fire model on that anatomy. Milestone 4 adds a visual
+observer path. MaleCNS still does not write JSBSim inceptors and does not
+train an aircraft decoder.
 
 Scientific distinction (keep this wording):
 

@@ -2,10 +2,10 @@
 
 Use a real JSBSim Cessna 172 as the physics core of a browser landing sandbox, then later put the public MaleCNS fruit-fly connectome in the control loop.
 
-**Current milestone: 3 — standalone MaleCNS-derived spiking-network simulation.**
-The connectome is **not** in the Cessna control loop.
-`ExpertLandingController` is still a classical PID autopilot — not biological
-computation. There is no retina and no aircraft decoder yet.
+**Current milestone: 4 — visual embodiment (the fly watches the expert land).**
+`ExpertLandingController` still flies the Cessna. MaleCNS observes a rendered
+fly-view through a modeled retina. The connectome does **not** write inceptors.
+There is no aircraft decoder.
 
 ## What currently works
 
@@ -15,10 +15,12 @@ computation. There is no retina and no aircraft decoder yet.
 - JSBSim integrates the aircraft; Python streams authoritative state back.
 - Three.js renders runway, terrain, a Cessna mesh, chase/cockpit cameras, and a telemetry HUD from that state.
 - Reset, successful-touchdown, crash, out-of-bounds, and failed-approach detection.
-- Only `ManualController` and `ExpertLandingController` are implemented. The latter is a **conventional autopilot**, not a fly brain. MaleCNS controllers are not stubbed.
-- Standalone MaleCNS v1.0 LIF simulator: prepare / query / demo / benchmark without JSBSim or the browser.
+- `ManualController` and `ExpertLandingController` (a **conventional autopilot**, not a fly brain).
+- **EXPERT + FLY OBSERVING**: same expert autoland while MaleCNS is stimulated from a Python cubemap / R1–R6 encoder. HUD shows fly-eye previews and neural rates. MaleCNS cannot control the airplane.
+- Standalone MaleCNS v1.0 LIF simulator: prepare / query / demo / benchmark / replay.
 
 JSBSim is authoritative. The browser does not integrate aircraft motion.
+Browser FPS does not define neural time (50 Hz on simulated time).
 
 ## Run locally
 
@@ -53,6 +55,9 @@ python -m fly_pilot.record_expert --episodes 20 --output data/expert/demonstrati
 python -m fly_pilot.brain.prepare
 python -m fly_pilot.brain.demo
 python -m fly_pilot.brain.benchmark
+python -m fly_pilot.record_observing --episodes 3 --seed 0
+python -m fly_pilot.brain.replay_episode data/observing/expert_observing.parquet
+python -m fly_pilot.validate_vision
 ```
 
 ## Controls
@@ -69,7 +74,7 @@ python -m fly_pilot.brain.benchmark
 | C | Chase ↔ cockpit camera |
 | P | Pause / resume |
 | HUD sliders and buttons | Same inceptors, plus reset/camera |
-| MANUAL / EXPERT | Human vs conventional autoland (not MaleCNS) |
+| MANUAL / EXPERT / EXPERT + FLY OBSERVING | Human vs conventional autoland vs expert + MaleCNS watching (not flying) |
 
 Elevator uses **pilot stick convention**: positive is back-stick / nose-up. The backend negates this for JSBSim's `fcs/elevator-cmd-norm`.
 
@@ -91,11 +96,13 @@ These are different experiments and must stay labeled as such:
 
 4. **ExpertLandingController** — classical cascaded PID; solvability baseline only
 
-5. **Standalone MaleCNS LIF (Milestone 3)** — measured MaleCNS wiring, modeled
-   firing dynamics, **not** in the aircraft loop
+5. **MaleCNS LIF** — measured MaleCNS wiring, modeled firing dynamics
 
-Milestone 3 adds (5) beside the Milestone 2 sandbox. The airplane is still not
-fly-controlled. See `docs/malecns.md`.
+6. **Milestone 4 observing** — modeled retina stimulates real R1–R6 cells while
+   the expert flies; **no decoder**, **no MaleCNS→JSBSim path**
+
+The airplane is still not fly-controlled. See `docs/malecns.md` and
+`docs/vision.md`.
 
 ## Layout
 
@@ -103,8 +110,9 @@ fly-controlled. See `docs/malecns.md`.
 backend/fly_pilot/   JSBSim sandbox, controllers, WebSocket server, MaleCNS LIF
 frontend/          Three.js / Vite client
 tests/             pytest (includes live JSBSim checks and brain tests)
-docs/              architecture, expert controller, MaleCNS notes
+docs/              architecture, expert controller, MaleCNS, vision
 scripts/           install / start / test
 data/malecns/      gitignored cache (run `python -m fly_pilot.brain.prepare`)
+data/observing/    gitignored fly-observing-expert parquet
 .cursor/           Cloud environment
 ```

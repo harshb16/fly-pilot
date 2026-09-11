@@ -13,8 +13,9 @@ validated neural dynamics, or proof of fly cognition.
 - **Dynamics:** a simplified leaky-integrate-and-fire (LIF) model, a modeling
   choice inspired by current MaleCNS demos (Fly64), not measured physiology.
 
-This milestone does **not** connect the network to the Cessna, does **not**
-implement retinal vision, and does **not** train an aircraft decoder.
+Milestone 4 **observes** the Cessna through a modeled retina. It still does
+**not** let MaleCNS write JSBSim inceptors and does **not** train an aircraft
+decoder. See `docs/vision.md`.
 
 ## Commands
 
@@ -23,7 +24,10 @@ python -m fly_pilot.brain.prepare      # download/validate/compact (idempotent)
 python -m fly_pilot.brain.query --list-superclasses
 python -m fly_pilot.brain.query --cell-type DNp01 --show-ids
 python -m fly_pilot.brain.demo         # baseline → stim → recovery + ablation
-python -m fly_pilot.brain.benchmark    # measured timings on this machine
+python -m fly_pilot.brain.benchmark    # multi-regime timings on this machine
+python -m fly_pilot.brain.replay_episode data/observing/expert_observing.parquet
+python -m fly_pilot.record_observing --episodes 3 --seed 0
+python -m fly_pilot.validate_vision
 ```
 
 Override the cache directory with `FLYPILOT_MALECNS_DIR`. Default:
@@ -286,8 +290,8 @@ Studied, **not copied** (that repository has no license file).
 | On-disk W | Signed + row-normalized CSR | **Unsigned synapse counts**; sign/norm at load |
 | Runtime | CSC event walk | CSC event walk |
 | dt / LIF | 20 ms, τ=0.1, θ=1, tonic 0.18, g=1.5, Bernoulli 1.2 Hz × 0.22 | Same defaults, named `LIFConfig` |
-| Vision | Cubemap → photoreceptors | **Not implemented** |
-| Motor | Hand-written DN → Mario | **Not implemented** (no aircraft hook) |
+| Vision | Cubemap → photoreceptors | Python 6×32 cubemap → R1–R6 (modeled layout) |
+| Motor | Hand-written DN → Mario | **Not implemented** (DN features recorded only) |
 | License | Unlicensed source; we do not vendor it | Original FlyPilot code; MaleCNS data remains CC BY 4.0 |
 
 fly-brain-minecraft (MIT code, CC BY data) was used as a **provenance**
@@ -302,13 +306,15 @@ as synapse count. Their bundled graph thresholds at ≥ 5 synapses; we do not.
   are absent.
 - Incoming-sum normalization is a stability trick, not anatomy.
 - Background is i.i.d. Bernoulli, not measured spontaneous activity.
-- Photoreceptor stimulation in the demo is injected current, not vision.
+- Photoreceptor stimulation in the **demo** is injected current. Milestone 4
+  observing mode uses the modeled retinal encoder instead.
+- R1–R6 spatial layout is an approximate spherical grid (no optic-column Excel).
 - Tonic current places many cells near threshold (~10 k spikes/step);
   that is a property of these defaults, not of a fly.
 - Autapses are stored; a point neuron treats them as self-current.
 - 44,877 unannotated fragments are omitted with their incident edges.
 - No plasticity, neuromodulation, compartments, or delay.
-- Not connected to JSBSim / Three.js in this milestone.
+- MaleCNS still does not control JSBSim. Observation is one-way.
 
 ## Implementation map
 
@@ -318,9 +324,14 @@ backend/fly_pilot/brain/
   connectome.py     load, body-id ↔ dense index, unsigned counts
   model.py          LIF + CSC event input
   populations.py    annotation queries
-  stimulation.py    deterministic current pulses
+  stimulation.py    pulse + per-receptor CurrentStimulation
   telemetry.py      rates / checksums
-  replay.py         spike-trace JSON
+  replay.py         spike-trace JSON (demo)
+  replay_episode.py retinal-current replay of observing datasets
+  vision/           cubemap, mapping, encoder, stimulus
+  observing.py      EXPERT + FLY OBSERVING (no act())
+  features.py       DN / visual-pathway rate extractors
+  scheduler.py      sim-time clocks
   prepare.py / demo.py / benchmark.py / query.py
 ```
 

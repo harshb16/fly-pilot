@@ -176,4 +176,60 @@ button:hover { filter: brightness(0.95); }
   margin: 10px 0 0;
 }
 
-.integrity { color: #d7c48a; }
+.observing {
+  right: 16px;
+  bottom: 16px;
+  width: min(340px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: repeat(2, minmax(90px, 1fr));
+  gap: 8px 14px;
+}
+
+.observing[hidden] { display: none; }
+
+.observing-banner {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #f3d48a;
+}
+
+.observing-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 11px;
+  color: #9fb0c3;
+  line-height: 1.4;
+}
+
+.eyes {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+}
+
+.eyes figure {
+  margin: 0;
+  flex: 1;
+}
+
+.eyes figcaption {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #9fb0c3;
+  margin-bottom: 4px;
+}
+
+.eyes canvas {
+  width: 100%;
+  height: 64px;
+  image-rendering: pixelated;
+  background: #0a1018;
+  border-radius: 6px;
+}
+
+.controller-toggle button {
+  max-width: 11rem;
+  line-height: 1.2;
+}

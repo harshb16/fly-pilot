@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { applyJsbsimPose, applyJsbsimSurfaces, createCessna } from "./aircraftMesh";
+import { FlyEyeRig } from "./flyEye";
 import type { RunwayInfo, StateMessage } from "./protocol";
 import { createEnvironment } from "./runwayMesh";
 
@@ -12,6 +13,7 @@ export class FlightScene {
   readonly cockpitCamera: THREE.PerspectiveCamera;
   aircraft: THREE.Group;
   mode: CameraMode = "chase";
+  readonly flyEye = new FlyEyeRig();
   private readonly sun: THREE.DirectionalLight;
   private env: THREE.Group | null = null;
   private cameraInitialized = false;
@@ -89,6 +91,11 @@ export class FlightScene {
 
   render(): void {
     this.renderer.render(this.scene, this.currentCamera());
+  }
+
+  renderFlyEyes(leftCanvas: HTMLCanvasElement | null, rightCanvas: HTMLCanvasElement | null): void {
+    this.flyEye.attach(this.aircraft);
+    this.flyEye.render(this.renderer, this.scene, this.aircraft, leftCanvas, rightCanvas);
   }
 
   private updateCameras(headingDeg: number, snap = false): void {

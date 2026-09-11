@@ -56,7 +56,7 @@ function frame(now: number): void {
   const dt = Math.min(0.05, (now - previous) / 1000);
   previous = now;
   const controls = input.update(dt);
-  const expert = client.state?.controller === "expert";
+  const expert = client.state?.controller === "expert" || client.state?.controller === "expert_observing";
   if (!expert) {
     if (client.status === "open" && changed(controls, lastControls)) {
       client.sendControls(controls);
@@ -68,6 +68,11 @@ function frame(now: number): void {
   }
   if (client.state) scene.applyState(client.state);
   scene.render();
+  if (client.state?.controller === "expert_observing" && now - lastHud > 80) {
+    const left = hudRoot.querySelector<HTMLCanvasElement>("#fly-left");
+    const right = hudRoot.querySelector<HTMLCanvasElement>("#fly-right");
+    scene.renderFlyEyes(left, right);
+  }
   if (now - lastHud > 80) {
     lastHud = now;
     renderHud({

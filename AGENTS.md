@@ -2,30 +2,32 @@
 
 ## Current milestone
 
-**Milestone 3 — standalone MaleCNS-derived spiking-network simulation.**
+**Milestone 4 — visual embodiment: the fly watches the expert land.**
 
-Working loops (unchanged from Milestone 2):
+Working loops:
 
 ```
 keyboard/HUD → WebSocket → ManualController → JSBSim c172p → state → Three.js
 ExpertLandingController (classical PID) → JSBSim c172p → state → Three.js
+ExpertLandingController → JSBSim → Python cubemap → R1–R6 encoder → MaleCNS
 ```
 
-New, **not** wired to the aircraft:
-
-```
-python -m fly_pilot.brain.prepare / demo / benchmark / query
-```
+MaleCNS output has **zero** effect on JSBSim. Mode name: `expert_observing`
+(**EXPERT + FLY OBSERVING**), never “FLY CONTROL”.
 
 This is a MaleCNS-derived spiking-network simulation using the measured
-connectome. LIF dynamics are a modeling choice. Do not call it an exact fly
-brain, a living fly, validated neural dynamics, or proof of fly cognition.
+connectome. LIF dynamics and the retina are modeling choices. Do not call it
+an exact fly brain, a living fly, validated neural dynamics, or proof of fly
+cognition.
 
-Do **not** implement `MaleCNSController`, `TrainedMaleCNSController`, retina,
-or an aircraft decoder in this milestone.
+Do **not** implement `MaleCNSController`, `TrainedMaleCNSController`, or an
+aircraft decoder in this milestone. Do not let MaleCNS activity reach
+`apply_controls`.
 
 `ExpertLandingController` remains ordinary autopilot code and must never be
 presented as biological computation.
+
+See `docs/vision.md` for the retinal path, scheduler, dataset, and replay.
 
 ## Architecture
 
@@ -33,17 +35,21 @@ presented as biological computation.
 - `backend/fly_pilot/controllers/` — `Controller.observe()` / `act() -> AircraftControls`.
   - `ManualController` — browser inceptors
   - `ExpertLandingController` — cascaded PID autoland (classical, labelled as such)
-- `backend/fly_pilot/brain/` — standalone MaleCNS load / LIF / stim / replay (no JSBSim)
+- `backend/fly_pilot/brain/` — MaleCNS load / LIF / vision / observing (no `act()`)
+- `backend/fly_pilot/brain/scheduler.py` — sim-time clocks (physics 120 Hz, vision/neural 50 Hz)
 - `backend/fly_pilot/guidance.py` — runway-relative glideslope / heading helpers
 - `backend/fly_pilot/initial_conditions.py` — seeded modest approach randomization
 - `backend/fly_pilot/sandbox.py` — realtime step, reset, pause, controller switch
 - `backend/fly_pilot/episode.py` — land / crash / OOB / failed approach
 - `backend/fly_pilot/evaluate.py` — headless ≥100-episode report
 - `backend/fly_pilot/record_expert.py` — Parquet demonstration dump
+- `backend/fly_pilot/record_observing.py` — fly-observing-expert Parquet + sidecar
 - `backend/fly_pilot/server.py` — WebSocket on port 8765
 - `frontend/` — Vite + Three.js. Aircraft transform comes from JSBSim ENU + Euler angles.
+- `frontend/src/flyEye.ts` — HUD preview cameras only; Python cubemap is canonical.
 
 JSBSim remains the only physics integrator. Three.js must not dead-reckon a parallel airplane.
+Browser FPS must not determine MaleCNS time.
 
 ## Commands
 
@@ -58,7 +64,10 @@ python -m fly_pilot.brain.prepare
 python -m fly_pilot.brain.query --list-superclasses
 python -m fly_pilot.brain.query --cell-type DNp01 --show-ids
 python -m fly_pilot.brain.demo --trace artifacts/malecns-demo-trace.json
-python -m fly_pilot.brain.benchmark
+python -m fly_pilot.brain.benchmark --steps 200 --json-out artifacts/malecns-benchmark-regimes.json
+python -m fly_pilot.record_observing --episodes 3 --seed 0 --output data/observing/expert_observing.parquet
+python -m fly_pilot.brain.replay_episode data/observing/expert_observing.parquet
+python -m fly_pilot.validate_vision
 ```
 
 Frontend talks to `ws(s)://<host>/ws`; Vite proxies that to `ws://127.0.0.1:8765`.
@@ -67,12 +76,16 @@ MaleCNS cache: `data/malecns/` (gitignored raw/prepared). Override with
 `FLYPILOT_MALECNS_DIR`. Prepare is idempotent (SHA-256). Do not commit the
 connectome. See `docs/malecns.md`.
 
+Observing recordings: `data/observing/` (gitignored parquet). See `docs/vision.md`.
+
 ## Testing
 
 Backend tests in `tests/` hit a real JSBSim `c172p` (elevator/aileron response, reset, telemetry, expert closed-loop landings). Do not mock the FDM for those.
 
 Brain unit tests use tiny synthetic graphs. Full-network smoke tests run only
 when `data/malecns/prepared/manifest.json` exists (`python -m fly_pilot.brain.prepare` first).
+
+Vision / scheduler / replay tests are in `tests/test_vision.py` (synthetic graph).
 
 Frontend check: `cd frontend && npm run typecheck`.
 
@@ -82,11 +95,12 @@ Visual check (required after UI/physics changes):
 2. Confirm HUD shows `JSBSim connected` and live IAS/ALT.
 3. MANUAL: move elevator/aileron; the mesh and telemetry must change.
 4. EXPERT: aircraft follows the runway, descends via JSBSim (not teleport), flares, touches down. HUD shows phase / GS / XTK. Integrity copy says conventional autopilot, not MaleCNS.
-5. Control surfaces follow JSBSim `fcs/*-pos-norm`.
-6. Reset starts a new episode. Switching MANUAL ↔ EXPERT works.
-7. Browser console should stay free of app errors.
+5. EXPERT + FLY OBSERVING: same expert landing, banner **FLY OBSERVING — NOT CONTROLLING**, left/right fly-eye canvases update, spikes/s and DN rates move, inceptors still match the expert. Switching away from this mode stops observing.
+6. Control surfaces follow JSBSim `fcs/*-pos-norm`.
+7. Reset starts a new episode. Switching MANUAL ↔ EXPERT ↔ EXPERT+FLY OBSERVING works.
+8. Browser console should stay free of app errors.
 
-Milestone 3 does not change the HUD. Do not add a fake MaleCNS controller option.
+Do not add a fake MaleCNS controller option.
 
 ## Cloud-specific
 
@@ -108,11 +122,12 @@ Distinguish, in code comments, HUD copy, and docs:
 2. MaleCNS with synaptic plasticity
 3. External learned controller
 4. **ExpertLandingController — classical autopilot; not (1), (2), or (3) as a fly model**
-5. **Standalone MaleCNS LIF (Milestone 3) — measured wiring, modeled dynamics, not in the aircraft loop**
+5. **MaleCNS LIF — measured wiring, modeled dynamics**
+6. **Milestone 4 observing — modeled retina → MaleCNS; expert still flies; no decoder**
 
-Milestone 2 HUD copy must keep saying MaleCNS is not in the loop, and that EXPERT is a conventional autopilot.
+HUD copy must keep saying MaleCNS does not write inceptors, and that EXPERT is a conventional autopilot.
 
-Do not copy Fly64 source. It has no license file. Use `docs/research-notes.md` and `docs/malecns.md` as the implementation reference.
+Do not copy Fly64 source. It has no license file. Use `docs/research-notes.md`, `docs/malecns.md`, and `docs/vision.md` as the implementation reference.
 
 ## Pitfalls discovered while building
 
@@ -130,11 +145,14 @@ Do not copy Fly64 source. It has no license file. Use `docs/research-notes.md` a
 - Pause the FDM when no browser is connected, and `reset()` on the first new client. Otherwise a Cloud agent that starts the server then opens the UI minutes later finds the Cessna already past the runway.
 - `run_ic()` restores ICs but does **not** zero `simulation/sim-time-sec` on JSBSim 1.3.1. Call `set_sim_time(0)` or episode timeouts accumulate across resets.
 - Uncommanded C172 is spirally unstable. Zero aileron/rudder is not a wings-level hold.
-- CSS `display: grid` on `.expert` overrides the `hidden` attribute unless `.expert[hidden] { display: none; }`.
+- CSS `display: grid` on `.expert` / `.observing` overrides the `hidden` attribute unless `[hidden] { display: none; }`.
 - MaleCNS weight Feather is ~1 GiB and ~152 M rows. Stream it in batches; do not `to_pandas()` the edge table. Validate SHA-256. Keep unsigned counts on disk; apply sign/normalization at load.
 - Dense CSR `W @ spikes` on 25.6 M edges was ~40 steps/s on this 4-vCPU VM. CSC event propagation (outgoing edges of spiking cells only) was ~190 steps/s without dropping edges.
 - Status filters on MaleCNS annotations drop photoreceptors. Keep every nonempty superclass, including `tbc`.
 - `flywireType` uses `R1-6`; `type` uses `R1-R6`. Population `--cell-type` matches both.
+- An infinite uniform ground plane is translation-invariant. The fly-view shader uses fog, a world-space checker, sun bias, and runway markings so approach motion and yaw change the retina.
+- Store retinal currents as float16 **and** inject the float16-round-tripped values into the LIF so replay without the renderer matches live checksums.
+- Do not let the Three.js fly-eye blit become the recorded sensory source. Python cubemap is canonical.
 
 ## Later controllers (do not stub)
 

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fly-pilot"
-version = "0.3.0"
-description = "FlyPilot: JSBSim Cessna 172 landing sandbox plus a standalone MaleCNS-derived LIF simulator"
+version = "0.4.0"
+description = "FlyPilot: JSBSim Cessna 172 landing sandbox with MaleCNS visual observation (fly does not control)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -23,6 +23,7 @@ dev = ["pytest>=8.0"]
 fly-pilot = "fly_pilot.server:main"
 fly-pilot-eval = "fly_pilot.evaluate:main"
 fly-pilot-record = "fly_pilot.record_expert:main"
+fly-pilot-record-observing = "fly_pilot.record_observing:main"
 
 [tool.setuptools.packages.find]
 include = ["fly_pilot*"]

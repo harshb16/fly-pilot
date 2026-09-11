@@ -1,9 +1,12 @@
 from fly_pilot.controllers.expert import ExpertLandingController, LandingPhase
 from fly_pilot.controllers.manual import ManualController
 from fly_pilot.episode import is_successful_touchdown
+from fly_pilot.record_observing import synthetic_observer
 from fly_pilot.runway import Runway
 from fly_pilot.sandbox import LandingSandbox
 from fly_pilot.state import AircraftControls, AircraftObservation, EpisodeStatus
+
+import pytest
 
 
 def _obs(**kwargs) -> AircraftObservation:
@@ -95,11 +98,13 @@ def test_sandbox_controller_mode_switch() -> None:
 
 def test_sandbox_rejects_malecns_placeholder() -> None:
     sandbox = LandingSandbox()
-    try:
+    with pytest.raises(ValueError) as exc:
         sandbox.set_controller("malecns")
-        raise AssertionError("should have refused MaleCNS")
-    except ValueError as exc:
-        assert "MaleCNS" in str(exc)
+    assert "MaleCNS" in str(exc.value)
+    sandbox.set_observer(synthetic_observer())
+    snap = sandbox.set_controller("expert_observing")
+    assert snap.observing is True
+    assert sandbox.controller.name == "expert"
 
 
 def test_successful_touchdown_classification() -> None:

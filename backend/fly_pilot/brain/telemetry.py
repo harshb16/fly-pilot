@@ -20,6 +20,7 @@ class StepTelemetry:
     population_spikes: dict[str, int] = field(default_factory=dict)
     population_rates_hz: dict[str, float] = field(default_factory=dict)
     spike_checksum: str = ""
+    n_outgoing_edges: int = 0
 
 
 def population_spike_count(fired: np.ndarray, indices: np.ndarray) -> int:

@@ -24,7 +24,7 @@ from scipy import sparse
 from fly_pilot.brain.config import LIFConfig
 from fly_pilot.brain.connectome import Connectome
 from fly_pilot.brain.replay import spike_checksum
-from fly_pilot.brain.stimulation import PulseStimulation
+from fly_pilot.brain.stimulation import CurrentStimulation, PulseStimulation
 from fly_pilot.brain.telemetry import StepTelemetry, population_spike_count, rate_hz
 
 
@@ -35,6 +35,7 @@ class StepResult:
     n_background_events: int
     n_stimulated: int
     checksum: str
+    n_outgoing_edges: int = 0
 
 
 class MaleCNSLIF:
@@ -69,6 +70,7 @@ class MaleCNSLIF:
         self.last_recurrent = np.zeros(self.n, dtype=np.float32)
         self.last_background = np.zeros(self.n, dtype=np.uint8)
         self.last_external_count = 0
+        self.last_outgoing_edges = 0
 
     def reset(self, seed: int | None = None) -> None:
         if seed is not None:
@@ -91,12 +93,17 @@ class MaleCNSLIF:
         self.last_recurrent[:] = 0
         self.last_background[:] = 0
         self.last_external_count = 0
+        self.last_outgoing_edges = 0
 
-    def step(self, stimulation: PulseStimulation | None = None) -> StepResult:
+    def step(self, stimulation: PulseStimulation | CurrentStimulation | None = None) -> StepResult:
         cfg = self.config
+        n_outgoing = 0
         if self.recurrent_enabled:
             spiking = np.flatnonzero(self.spikes)
             if spiking.size:
+                starts = self.weights_csc.indptr[spiking]
+                ends = self.weights_csc.indptr[spiking + 1]
+                n_outgoing = int((ends - starts).sum())
                 recurrent = np.asarray(
                     self.weights_csc[:, spiking].sum(axis=1),
                     dtype=np.float32,
@@ -107,6 +114,7 @@ class MaleCNSLIF:
         else:
             recurrent = np.zeros(self.n, dtype=np.float32)
         self.last_recurrent = recurrent
+        self.last_outgoing_edges = n_outgoing
 
         self.voltage *= np.float32(cfg.decay)
         self.voltage += recurrent
@@ -137,6 +145,7 @@ class MaleCNSLIF:
             n_background_events=n_background,
             n_stimulated=n_stimulated,
             checksum=spike_checksum(fired),
+            n_outgoing_edges=n_outgoing,
         )
         self.step_count += 1
         return result
@@ -170,4 +179,5 @@ class MaleCNSLIF:
             population_spikes=pop_spikes,
             population_rates_hz=pop_rates,
             spike_checksum=result.checksum,
+            n_outgoing_edges=result.n_outgoing_edges,
         )
