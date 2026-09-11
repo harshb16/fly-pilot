@@ -179,4 +179,7 @@ Not taken: FlightGear socket output, OpenAI Gym API, reward shaping (no training
 - MaleCNS paper / data portal for wiring.
 - Fly64 dashboard and technical notes for how *not* to over-claim physiology.
 
-Milestone 2+ should load the real Feather tables, keep sparse CSR/CSC, inject retinal current only into photoreceptors, and read named descending neurons — not a dense MLP standing in for the graph.
+Milestone 3 implemented the real Feather tables as a **standalone** LIF
+simulator (`docs/malecns.md`). Retina, descending-neuron decoder, and
+aircraft coupling remain later work. Keep sparse CSR/CSC; do not substitute
+a dense MLP for the graph.

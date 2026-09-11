@@ -1,8 +1,8 @@
 """FlyPilot backend.
 
-Milestone 2 adds ExpertLandingController, a conventional classical autopilot
-used as a solvability baseline and expert-data generator. MaleCNS is still
-not in the loop.
+Milestone 3 adds a standalone MaleCNS-derived spiking-network simulator.
+It is not connected to the aircraft. ExpertLandingController remains a
+conventional classical autopilot.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

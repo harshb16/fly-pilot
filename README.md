@@ -2,10 +2,10 @@
 
 Use a real JSBSim Cessna 172 as the physics core of a browser landing sandbox, then later put the public MaleCNS fruit-fly connectome in the control loop.
 
-**Current milestone: 2 — conventional expert autoland on the JSBSim sandbox.**
-The MaleCNS model is **not** implemented and **not** in the loop.
-`ExpertLandingController` is a classical PID autopilot used as a solvability
-baseline and expert-data generator — not biological computation.
+**Current milestone: 3 — standalone MaleCNS-derived spiking-network simulation.**
+The connectome is **not** in the Cessna control loop.
+`ExpertLandingController` is still a classical PID autopilot — not biological
+computation. There is no retina and no aircraft decoder yet.
 
 ## What currently works
 
@@ -16,6 +16,7 @@ baseline and expert-data generator — not biological computation.
 - Three.js renders runway, terrain, a Cessna mesh, chase/cockpit cameras, and a telemetry HUD from that state.
 - Reset, successful-touchdown, crash, out-of-bounds, and failed-approach detection.
 - Only `ManualController` and `ExpertLandingController` are implemented. The latter is a **conventional autopilot**, not a fly brain. MaleCNS controllers are not stubbed.
+- Standalone MaleCNS v1.0 LIF simulator: prepare / query / demo / benchmark without JSBSim or the browser.
 
 JSBSim is authoritative. The browser does not integrate aircraft motion.
 
@@ -49,6 +50,9 @@ PYTHONPATH=backend python -m pytest
 cd frontend && npm run typecheck
 python -m fly_pilot.evaluate --episodes 100 --seed 0
 python -m fly_pilot.record_expert --episodes 20 --output data/expert/demonstrations.parquet
+python -m fly_pilot.brain.prepare
+python -m fly_pilot.brain.demo
+python -m fly_pilot.brain.benchmark
 ```
 
 ## Controls
@@ -87,15 +91,20 @@ These are different experiments and must stay labeled as such:
 
 4. **ExpertLandingController** — classical cascaded PID; solvability baseline only
 
-Milestone 2 is (4) plus a human-flown sandbox. It is not fly-controlled.
+5. **Standalone MaleCNS LIF (Milestone 3)** — measured MaleCNS wiring, modeled
+   firing dynamics, **not** in the aircraft loop
+
+Milestone 3 adds (5) beside the Milestone 2 sandbox. The airplane is still not
+fly-controlled. See `docs/malecns.md`.
 
 ## Layout
 
 ```
-backend/fly_pilot/   JSBSim sandbox, controllers, WebSocket server
+backend/fly_pilot/   JSBSim sandbox, controllers, WebSocket server, MaleCNS LIF
 frontend/          Three.js / Vite client
-tests/             pytest (includes live JSBSim checks)
-docs/              architecture and research notes
+tests/             pytest (includes live JSBSim checks and brain tests)
+docs/              architecture, expert controller, MaleCNS notes
 scripts/           install / start / test
+data/malecns/      gitignored cache (run `python -m fly_pilot.brain.prepare`)
 .cursor/           Cloud environment
 ```
