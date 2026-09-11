@@ -237,3 +237,58 @@ python -m fly_pilot.brain.replay_episode data/observing/expert_observing.parquet
 
 Synthetic (no MaleCNS download) recordings use `--synthetic` and are what the
 unit tests exercise.
+
+## Measured on this VM (Milestone 4)
+
+Host: Cursor Cloud VM, Python 3.12.3, NumPy 2.5.3, 4 CPUs. Full un-pruned
+MaleCNS graph. CSC event propagation. Not pruned for speed.
+
+### Visual / neural clocks
+
+| Item | Value |
+|---|---|
+| Canonical cameras | 6-face cubemap, 32×32 RGB, atlas 96×64 |
+| Preview cameras | Two Three.js 48×32, FOV 140°, yaw ±63.25° |
+| Mapped R1–R6 | **3,377** (1,112 left / 2,265 right; 0 unknown side) |
+| Descending neurons | **1,314** (656 L / 648 R / 10 unknown; 481 types) |
+| Retinal / MaleCNS rate | **50 Hz** (`dt = 20 ms`) |
+| JSBSim | 120 Hz |
+
+### Benchmark (`--steps 200 --warmup 20`, seed 64)
+
+| Regime | Mean spikes / step | Outgoing edges / step | Timesteps / wall s | Sim / wall | RSS after |
+|---|---:|---:|---:|---:|---|
+| Background only | 10,879 | 2,090,780 | **161** | 3.22 | 895 MB |
+| R1–R6 moderate (0.40) | 12,238 | 2,098,230 | **145** | 2.91 | 895 MB |
+| R1–R6 strong (1.20) | 13,959 | 2,105,093 | **151** | 3.02 | 895 MB |
+| 12% cells @ 1.50 | 35,182 | 6,000,688 | **55** | 1.11 | 913 MB |
+
+Background is a bit below the Milestone 3 ~190 steps/s snapshot; still well
+above the 50 Hz neural clock. High activity stays faster than real time on
+this host. Graph was not pruned.
+
+### Observing landings (`record_observing --episodes 3 --seed 0`)
+
+| Item | Value |
+|---|---|
+| Outcomes | 3 / 3 landed |
+| Wall-clock | 168.8 s |
+| Simulated time (sum) | ~313.9 s (≈106 + 99 + 108 s) |
+| Wall vs sim | **1.86× faster than realtime** |
+| Effective neural rate | **93** steps / wall s (target 50) |
+| Mean / max spikes | 11,587 / 20,271 |
+| Dataset | 15,697 rows × 43 columns |
+| Parquet | 87.8 MiB total, **~29.3 MiB / landing** |
+| Replay | **15,694 / 15,694** spike checksums match |
+
+Control authority remained `ExpertLandingController`. `male_cns_controls_aircraft` is false.
+
+### Validation
+
+| Experiment | Synthetic | Full MaleCNS |
+|---|---|---|
+| A static | settle + checksum replay | same |
+| B motion | 12 unique retinal frames | 12 unique; spike counts 0 → 19,360 |
+| C left/right yaw | atlas + spatial retinal difference | same; no steering claim |
+| D replay | 101 / 101 | 15,694 / 15,694 on recorded landings |
+

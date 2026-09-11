@@ -220,24 +220,22 @@ CSR/CSC numeric payload: 205 MB each (float32 data + int32 indices + indptr).
 
 Host: Cursor Cloud VM, Python 3.12.3, NumPy 2.5.3, 4 CPUs, 15 GiB RAM.
 
-`python -m fly_pilot.brain.benchmark --steps 250 --warmup 30`
+`python -m fly_pilot.brain.benchmark --steps 200 --warmup 20` (Milestone 4
+regimes, un-pruned graph):
 
-| Metric | Value |
-|---|---|
-| Connectome load | 0.39 s |
-| LIF initialization | 0.74 s |
-| Neural timesteps / wall-clock second | **190** |
-| Simulated seconds / wall-clock second | **3.80** (dt = 0.020) |
-| Mean spikes / step (this config) | 10,874 |
+| Regime | Mean spikes / step | Outgoing edges / step | Steps / wall s | Sim / wall |
+|---|---:|---:|---:|---:|
+| Background only | 10,879 | 2.09 M | **161** | 3.22 |
+| R1–R6 moderate (0.40) | 12,238 | 2.10 M | **145** | 2.91 |
+| R1–R6 strong (1.20) | 13,959 | 2.11 M | **151** | 3.02 |
+| 12% random cells @ 1.50 | 35,182 | 6.00 M | **55** | 1.11 |
 
-The first CSR-dense matvec implementation ran at ~40 steps/s. Profiling
-showed the 25.6 M nonzero multiply was the cost; switching to **CSC event
-propagation** (sum outgoing edges of the neurons that actually spiked) raised
-throughput to 190 steps/s without removing any edge. Sparse evaluation ≠
-graph pruning.
+Milestone 3’s single-regime snapshot was ~190 steps/s background on a similar
+host; 161 is the same engine with extra timing instrumentation, still 3.2× the
+50 Hz neural clock. High activity is slower because CSC walks more outgoing
+edges, not because synapses were dropped. RSS after init ≈ 860–913 MB.
 
-190 steps/s is 3.8× faster than the 50 Hz neural clock, enough headroom for
-an eventual flight loop on this class of VM.
+See `docs/vision.md` for observing-loop timings (expert landings + retina).
 
 ## Demo stimulation
 
