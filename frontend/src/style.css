@@ -66,6 +66,41 @@ html, body, #app {
 .pill.open { background: #1f6f4a; }
 .pill.closed, .pill.connecting { background: #8a3d2a; }
 
+.controller-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.controller-toggle button {
+  background: #2a3340;
+  color: #d5deea;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.controller-toggle button.active {
+  background: #e8eef5;
+  color: #11161c;
+}
+
+.expert {
+  left: 16px;
+  top: 96px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(90px, 1fr));
+  gap: 8px 14px;
+  width: min(280px, calc(100vw - 32px));
+}
+
+.expert[hidden] { display: none; }
+
+.expert-title {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #d7c48a;
+}
+
 .telemetry {
   top: 16px;
   right: 16px;

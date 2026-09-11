@@ -52,8 +52,9 @@ export class SimClient {
     this.send({ type: "controls", ...controls });
   }
 
-  reset(): void {
-    this.send({ type: "reset" });
+  reset(seed?: number): void {
+    if (seed === undefined) this.send({ type: "reset" });
+    else this.send({ type: "reset", seed });
   }
 
   pause(): void {
@@ -62,6 +63,10 @@ export class SimClient {
 
   resume(): void {
     this.send({ type: "resume" });
+  }
+
+  setController(name: "manual" | "expert"): void {
+    this.send({ type: "set_controller", name });
   }
 
   private send(payload: Record<string, unknown>): void {

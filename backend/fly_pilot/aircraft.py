@@ -12,6 +12,7 @@ from typing import Any
 import jsbsim
 
 from fly_pilot.geodesy import runway_coordinates
+from fly_pilot.initial_conditions import SpawnState, spawn_geodetic
 from fly_pilot.runway import ApproachConfig, Runway, approach_origin
 from fly_pilot.state import AircraftControls, AircraftObservation
 
@@ -45,37 +46,90 @@ class Cessna172:
         self._last_controls = AircraftControls(throttle=self.approach.throttle)
         self.reset()
 
-    def reset(self) -> AircraftObservation:
-        lat, lon, alt_m = approach_origin(self.runway, self.approach)
-        alt_ft = alt_m / FT_TO_M
-        self.fdm["ic/lat-geod-deg"] = lat
-        self.fdm["ic/long-gc-deg"] = lon
-        self.fdm["ic/h-sl-ft"] = alt_ft
-        self.fdm["ic/terrain-elevation-ft"] = self.runway.alt_m / FT_TO_M
-        self.fdm["ic/vc-kts"] = self.approach.airspeed_kts
-        self.fdm["ic/psi-true-deg"] = self.runway.heading_deg
-        self.fdm["ic/phi-deg"] = 0.0
-        self.fdm["ic/gamma-deg"] = self.approach.flight_path_deg
-        try:
-            self.fdm["ic/alpha-deg"] = self.approach.alpha_deg
-        except Exception:
-            self.fdm["ic/theta-deg"] = self.approach.flight_path_deg + self.approach.alpha_deg
+    def reset(self, spawn: SpawnState | None = None) -> AircraftObservation:
+        """Place the C172 on short final and start the engine.
 
+        JSBSim 1.3.1 c172p ignores `propulsion/engine/set-running = 1` until the
+        Lycoming has actually been cranked. We crank, then `run_ic()` again so
+        the episode still begins at the approach spawn (engine stays running).
+        """
+        self._apply_ics(spawn)
         if not self.fdm.run_ic():
             raise RuntimeError("JSBSim run_ic() failed")
+        self._crank_engine()
+        self._apply_ics(spawn)
+        if not self.fdm.run_ic():
+            raise RuntimeError("JSBSim run_ic() failed after engine start")
         self.fdm.set_sim_time(0.0)
-
-        self._start_engine()
+        self._configure_systems()
         self._last_controls = AircraftControls(throttle=self.approach.throttle)
         self.apply_controls(self._last_controls)
         return self.observe()
 
-    def _start_engine(self) -> None:
-        self.fdm["propulsion/engine/set-running"] = 1.0
+    def _apply_ics(self, spawn: SpawnState | None) -> None:
+        if spawn is None:
+            lat, lon, alt_m = approach_origin(self.runway, self.approach)
+            heading = self.runway.heading_deg
+            roll = 0.0
+            vc = self.approach.airspeed_kts
+            gamma = self.approach.flight_path_deg
+            alpha = self.approach.alpha_deg
+        else:
+            lat, lon, alt_m = spawn_geodetic(self.runway, spawn)
+            heading = spawn.heading_deg
+            roll = spawn.roll_deg
+            vc = spawn.airspeed_kts
+            gamma = spawn.gamma_deg
+            alpha = spawn.alpha_deg
+        self.fdm["ic/lat-geod-deg"] = lat
+        self.fdm["ic/long-gc-deg"] = lon
+        self.fdm["ic/h-sl-ft"] = alt_m / FT_TO_M
+        self.fdm["ic/terrain-elevation-ft"] = self.runway.alt_m / FT_TO_M
+        self.fdm["ic/vc-kts"] = vc
+        self.fdm["ic/psi-true-deg"] = heading
+        self.fdm["ic/phi-deg"] = roll
+        self.fdm["ic/gamma-deg"] = gamma
+        try:
+            self.fdm["ic/alpha-deg"] = alpha
+        except Exception:
+            self.fdm["ic/theta-deg"] = gamma + alpha
+
+    def _crank_engine(self) -> None:
+        """Starter + magnetos until the piston engine catches.
+
+        Writing `set-running = 1` without cranking leaves RPM=0 and thrust=0,
+        which is why an uncommanded C172 appears to sink with a dead engine.
+        """
+        fdm = self.fdm
+        fdm["fcs/mixture-cmd-norm"] = 1.0
+        fdm["fcs/throttle-cmd-norm"] = 0.2
+        fdm["gear/gear-cmd-norm"] = 1.0
+        caught = False
+        n = int(4.0 / max(self.dt, 1e-3))
+        for _ in range(n):
+            fdm["propulsion/starter_cmd"] = 1.0
+            fdm["propulsion/magneto_cmd"] = 3.0
+            fdm.run()
+            rpm = float(fdm["propulsion/engine/engine-rpm"])
+            running = float(fdm["propulsion/engine/set-running"])
+            if running >= 1.0 and rpm > 1000.0:
+                caught = True
+                break
+        fdm["propulsion/starter_cmd"] = 0.0
+        fdm["propulsion/magneto_cmd"] = 3.0
+        if not caught:
+            raise RuntimeError("JSBSim c172p engine failed to start")
+
+    def _configure_systems(self) -> None:
+        self.fdm["propulsion/magneto_cmd"] = 3.0
         self.fdm["fcs/mixture-cmd-norm"] = self.approach.mixture_norm
         self.fdm["fcs/flap-cmd-norm"] = self.approach.flaps_norm
         self.fdm["fcs/throttle-cmd-norm"] = self.approach.throttle
         self.fdm["gear/gear-cmd-norm"] = 1.0
+
+    def _start_engine(self) -> None:
+        # Kept for callers/tests that used the old name; crank happens in reset().
+        self._configure_systems()
 
     def apply_controls(self, controls: AircraftControls) -> None:
         cmd = controls.clamped()
@@ -132,12 +186,18 @@ class Cessna172:
             throttle=self._last_controls.throttle,
             on_ground=on_ground,
             wow=wow,
+            p_deg_s=float(fdm["velocities/p-rad_sec"]) * DEG,
+            q_deg_s=float(fdm["velocities/q-rad_sec"]) * DEG,
+            r_deg_s=float(fdm["velocities/r-rad_sec"]) * DEG,
+            beta_deg=float(fdm["aero/beta-deg"]),
             extra={
                 "elevator_pos": float(fdm["fcs/elevator-pos-norm"]),
                 "aileron_pos": float(fdm["fcs/left-aileron-pos-norm"]),
                 "rudder_pos": float(fdm["fcs/rudder-pos-norm"]),
                 "throttle_pos": float(fdm["fcs/throttle-pos-norm"]),
                 "beta_deg": float(fdm["aero/beta-deg"]),
+                "engine_rpm": float(fdm["propulsion/engine/engine-rpm"]),
+                "thrust_lbs": float(fdm["propulsion/engine/thrust-lbs"]),
             },
         )
 

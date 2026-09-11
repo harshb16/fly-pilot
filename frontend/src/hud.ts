@@ -8,6 +8,7 @@ export interface HudHandlers {
   onResume: () => void;
   onCamera: (mode: CameraMode) => void;
   onSlider: (axis: keyof PilotControls, value: number, holding: boolean) => void;
+  onController: (name: "manual" | "expert") => void;
 }
 
 export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudModel) => void {
@@ -15,7 +16,11 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
     <div class="topbar">
       <div>
         <div class="brand">FlyPilot</div>
-        <div class="sub">Milestone 1 · JSBSim Cessna 172 · manual control</div>
+        <div class="sub" id="milestone-sub">Milestone 2 · JSBSim Cessna 172 · manual / conventional expert</div>
+      </div>
+      <div class="controller-toggle">
+        <button id="btn-manual" type="button" class="active">MANUAL</button>
+        <button id="btn-expert" type="button">EXPERT</button>
       </div>
       <div id="status-pill" class="pill">connecting</div>
     </div>
@@ -30,6 +35,13 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
       <div class="readout"><span>XTK</span><strong id="xtk">—</strong><em>m</em></div>
     </div>
     <div class="panel episode" id="episode">IN PROGRESS</div>
+    <div class="panel expert" id="expert-panel" hidden>
+      <div class="expert-title">Conventional autopilot — not MaleCNS</div>
+      <div class="readout"><span>PHASE</span><strong id="ex-phase">—</strong></div>
+      <div class="readout"><span>TGT IAS</span><strong id="ex-ias">—</strong><em>kt</em></div>
+      <div class="readout"><span>GS ERR</span><strong id="ex-gs">—</strong><em>m</em></div>
+      <div class="readout"><span>XTK</span><strong id="ex-xtk">—</strong><em>m</em></div>
+    </div>
     <div class="panel controls">
       ${slider("aileron", "Aileron", -1, 1, 0)}
       ${slider("elevator", "Elevator", -1, 1, 0)}
@@ -56,6 +68,8 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
   root.querySelector("#btn-resume")?.addEventListener("click", handlers.onResume);
   root.querySelector("#btn-chase")?.addEventListener("click", () => handlers.onCamera("chase"));
   root.querySelector("#btn-cockpit")?.addEventListener("click", () => handlers.onCamera("cockpit"));
+  root.querySelector("#btn-manual")?.addEventListener("click", () => handlers.onController("manual"));
+  root.querySelector("#btn-expert")?.addEventListener("click", () => handlers.onController("expert"));
 
   for (const axis of ["aileron", "elevator", "rudder", "throttle"] as const) {
     const input = root.querySelector<HTMLInputElement>(`#${axis}`);
@@ -108,10 +122,35 @@ function renderHud(root: HTMLElement, model: HudModel): void {
     episode.className = `panel episode ${state.episode.status}`;
   }
 
-  syncSlider(root, "aileron", model.localControls.aileron);
-  syncSlider(root, "elevator", model.localControls.elevator);
-  syncSlider(root, "rudder", model.localControls.rudder);
-  syncSlider(root, "throttle", model.localControls.throttle);
+  const controller = state?.controller ?? model.hello?.controller ?? "manual";
+  const shown = controller === "expert" && state ? state.controls : model.localControls;
+  syncSlider(root, "aileron", shown.aileron);
+  syncSlider(root, "elevator", shown.elevator);
+  syncSlider(root, "rudder", shown.rudder);
+  syncSlider(root, "throttle", shown.throttle);
+
+  root.querySelector("#btn-manual")?.classList.toggle("active", controller === "manual");
+  root.querySelector("#btn-expert")?.classList.toggle("active", controller === "expert");
+
+  const expertPanel = root.querySelector<HTMLElement>("#expert-panel");
+  if (expertPanel) {
+    const show = controller === "expert";
+    expertPanel.hidden = !show;
+    if (show && state?.expert) {
+      setText(root, "ex-phase", String(state.expert.phase).replaceAll("_", " "));
+      setText(root, "ex-ias", fmt(state.expert.target_airspeed_kts, 0));
+      setText(root, "ex-gs", fmt(state.expert.glideslope_error_m, 1));
+      setText(root, "ex-xtk", fmt(state.expert.centerline_error_m, 1));
+    }
+  }
+
+  const sub = root.querySelector("#milestone-sub");
+  if (sub) {
+    sub.textContent =
+      controller === "expert"
+        ? "Milestone 2 · JSBSim Cessna 172 · conventional expert autopilot"
+        : "Milestone 2 · JSBSim Cessna 172 · manual control";
+  }
 
   const integrity = root.querySelector("#integrity");
   if (integrity && model.hello) {

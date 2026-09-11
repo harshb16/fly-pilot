@@ -12,6 +12,42 @@ from fly_pilot.runway import ApproachConfig, Runway
 from fly_pilot.state import AircraftObservation, EpisodeInfo, EpisodeStatus
 
 
+def is_over_runway(
+    obs: AircraftObservation,
+    runway: Runway,
+    extra_width: float = 0.0,
+) -> bool:
+    half = runway.width_m / 2.0 + extra_width
+    return 0.0 <= obs.along_m <= runway.length_m and abs(obs.right_m) <= half
+
+
+def is_successful_touchdown(
+    obs: AircraftObservation,
+    runway: Runway | None = None,
+    rules: EpisodeRules | None = None,
+) -> bool:
+    """True if this observation would count as a successful landing.
+
+    Criteria (not gamed by the expert controller; the controller must actually
+    put the JSBSim airframe here):
+
+    - first ground contact after flight (caller tracks airborne)
+    - over the paved runway, with a small lateral tolerance
+    - sink rate no worse than 700 fpm
+    - |roll| ≤ 12°, |pitch| ≤ 12°
+    """
+    runway = runway or Runway()
+    rules = rules or EpisodeRules()
+    sink = -obs.vertical_speed_fpm
+    return (
+        bool(obs.on_ground)
+        and is_over_runway(obs, runway, extra_width=rules.landing_max_drift_m)
+        and sink <= rules.landing_max_sink_fpm
+        and abs(obs.roll_deg) <= rules.landing_max_roll_deg
+        and abs(obs.pitch_deg) <= 12.0
+    )
+
+
 @dataclass
 class EpisodeRules:
     max_time_s: float = 180.0
@@ -80,17 +116,10 @@ class EpisodeMonitor:
         return self.info
 
     def _over_runway(self, obs: AircraftObservation, extra_width: float = 0.0) -> bool:
-        half = self.runway.width_m / 2.0 + extra_width
-        return 0.0 <= obs.along_m <= self.runway.length_m and abs(obs.right_m) <= half
+        return is_over_runway(obs, self.runway, extra_width)
 
     def _is_good_touchdown(self, obs: AircraftObservation) -> bool:
-        sink = -obs.vertical_speed_fpm
-        return (
-            self._over_runway(obs, extra_width=self.rules.landing_max_drift_m)
-            and sink <= self.rules.landing_max_sink_fpm
-            and abs(obs.roll_deg) <= self.rules.landing_max_roll_deg
-            and abs(obs.pitch_deg) <= 12.0
-        )
+        return is_successful_touchdown(obs, self.runway, self.rules)
 
     def _crash_reason(self, obs: AircraftObservation) -> str | None:
         if obs.on_ground and -obs.vertical_speed_fpm > self.rules.crash_sink_fpm:

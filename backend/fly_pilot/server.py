@@ -28,6 +28,7 @@ class SimServer:
         self.sandbox = LandingSandbox()
         self.sandbox.paused = True
         self.clients: set[ServerConnection] = set()
+        self._push_hello = False
 
     async def handler(self, websocket: ServerConnection) -> None:
         first_client = not self.clients
@@ -60,12 +61,21 @@ class SimServer:
         if kind == "controls":
             self.sandbox.set_manual_controls(controls_from_message(data))
         elif kind == "reset":
-            self.sandbox.reset()
+            seed = data.get("seed")
+            self.sandbox.reset(seed=int(seed) if seed is not None else None)
         elif kind == "pause":
             self.sandbox.paused = True
         elif kind == "resume":
             if self.sandbox.episode.info.status.value == "in_progress":
                 self.sandbox.paused = False
+        elif kind == "set_controller":
+            name = str(data.get("name", "manual"))
+            try:
+                self.sandbox.set_controller(name)
+            except ValueError as exc:
+                LOGGER.warning("%s", exc)
+                return
+            self._push_hello = True
         else:
             LOGGER.debug("ignored client message type %s", kind)
 
@@ -94,7 +104,12 @@ class SimServer:
                 last = now
                 self.sandbox.step_realtime(wall_dt)
                 emit_carry += wall_dt
-                if emit_carry >= emit_dt:
+                if self._push_hello and self.clients:
+                    self._push_hello = False
+                    await self.broadcast(hello_payload(self.sandbox))
+                    await self.broadcast(state_payload(self.sandbox.snapshot()))
+                    emit_carry = 0.0
+                elif emit_carry >= emit_dt:
                     emit_carry = 0.0
                     if self.clients:
                         await self.broadcast(state_payload(self.sandbox.snapshot()))
@@ -110,7 +125,7 @@ class SimServer:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="FlyPilot Milestone 1 sandbox server")
+    parser = argparse.ArgumentParser(description="FlyPilot JSBSim Cessna 172 sandbox server")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()

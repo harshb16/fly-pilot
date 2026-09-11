@@ -2,8 +2,10 @@
 
 Use a real JSBSim Cessna 172 as the physics core of a browser landing sandbox, then later put the public MaleCNS fruit-fly connectome in the control loop.
 
-**Current milestone: 1 — human-flown JSBSim landing sandbox.**
+**Current milestone: 2 — conventional expert autoland on the JSBSim sandbox.**
 The MaleCNS model is **not** implemented and **not** in the loop.
+`ExpertLandingController` is a classical PID autopilot used as a solvability
+baseline and expert-data generator — not biological computation.
 
 ## What currently works
 
@@ -13,7 +15,7 @@ The MaleCNS model is **not** implemented and **not** in the loop.
 - JSBSim integrates the aircraft; Python streams authoritative state back.
 - Three.js renders runway, terrain, a Cessna mesh, chase/cockpit cameras, and a telemetry HUD from that state.
 - Reset, successful-touchdown, crash, out-of-bounds, and failed-approach detection.
-- Only `ManualController` is implemented. The controller interface is ready for later expert / MaleCNS controllers; those are not stubbed.
+- Only `ManualController` and `ExpertLandingController` are implemented. The latter is a **conventional autopilot**, not a fly brain. MaleCNS controllers are not stubbed.
 
 JSBSim is authoritative. The browser does not integrate aircraft motion.
 
@@ -45,6 +47,8 @@ Or separately:
 source .venv/bin/activate
 PYTHONPATH=backend python -m pytest
 cd frontend && npm run typecheck
+python -m fly_pilot.evaluate --episodes 100 --seed 0
+python -m fly_pilot.record_expert --episodes 20 --output data/expert/demonstrations.parquet
 ```
 
 ## Controls
@@ -61,6 +65,7 @@ cd frontend && npm run typecheck
 | C | Chase ↔ cockpit camera |
 | P | Pause / resume |
 | HUD sliders and buttons | Same inceptors, plus reset/camera |
+| MANUAL / EXPERT | Human vs conventional autoland (not MaleCNS) |
 
 Elevator uses **pilot stick convention**: positive is back-stick / nose-up. The backend negates this for JSBSim's `fcs/elevator-cmd-norm`.
 
@@ -80,7 +85,9 @@ These are different experiments and must stay labeled as such:
 2. MaleCNS with actual synaptic plasticity
 3. An external learned controller (no connectome in the loop)
 
-Milestone 1 is none of the above. It is a human flying a JSBSim Cessna so the later loop has a real plant.
+4. **ExpertLandingController** — classical cascaded PID; solvability baseline only
+
+Milestone 2 is (4) plus a human-flown sandbox. It is not fly-controlled.
 
 ## Layout
 

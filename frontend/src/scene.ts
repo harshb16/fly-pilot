@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { applyJsbsimPose, createCessna } from "./aircraftMesh";
+import { applyJsbsimPose, applyJsbsimSurfaces, createCessna } from "./aircraftMesh";
 import type { RunwayInfo, StateMessage } from "./protocol";
 import { createEnvironment } from "./runwayMesh";
 
@@ -69,6 +69,13 @@ export class FlightScene {
     const p = state.position;
     const a = state.attitude;
     applyJsbsimPose(this.aircraft, p.east_m, p.north_m, p.up_m, a.heading_deg, a.pitch_deg, a.roll_deg);
+    const surfaces = state.surfaces;
+    applyJsbsimSurfaces(
+      this.aircraft,
+      surfaces?.elevator_pos ?? state.controls.elevator,
+      surfaces?.aileron_pos ?? state.controls.aileron,
+      surfaces?.rudder_pos ?? state.controls.rudder,
+    );
     const prop = this.aircraft.getObjectByName("prop");
     if (prop) prop.rotation.z += 0.8 + state.controls.throttle * 2.4;
     const jumped = this.cameraInitialized && this.lastAircraftPos.distanceTo(this.aircraft.position) > 150;
