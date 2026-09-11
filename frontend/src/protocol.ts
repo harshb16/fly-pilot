@@ -5,6 +5,8 @@ export type EpisodeStatus =
   | "out_of_bounds"
   | "failed_approach";
 
+export type ControllerName = "manual" | "expert";
+
 export interface RunwayInfo {
   name: string;
   lat_deg: number;
@@ -18,7 +20,7 @@ export interface RunwayInfo {
 export interface HelloMessage {
   type: "hello";
   milestone: number;
-  controller: string;
+  controller: ControllerName | string;
   physics: string;
   aircraft: string;
   runway: RunwayInfo;
@@ -32,15 +34,29 @@ export interface HelloMessage {
     authoritative_physics: string;
     visuals: string;
     male_cns: boolean;
+    expert_is_biological?: boolean;
     note: string;
   };
+}
+
+export interface ExpertTelemetry {
+  kind: string;
+  label?: string;
+  male_cns?: boolean;
+  phase: string;
+  target_airspeed_kts: number;
+  glideslope_error_deg: number;
+  glideslope_error_m: number;
+  centerline_error_m: number;
+  heading_error_deg?: number;
 }
 
 export interface StateMessage {
   type: "state";
   sim_time: number;
   paused: boolean;
-  controller: string;
+  controller: ControllerName | string;
+  spawn_seed?: number | null;
   position: {
     lat_deg: number;
     lon_deg: number;
@@ -62,12 +78,22 @@ export interface StateMessage {
     roll_deg: number;
     heading_deg: number;
     alpha_deg: number;
+    p_deg_s?: number;
+    q_deg_s?: number;
+    r_deg_s?: number;
+    beta_deg?: number;
   };
   controls: {
     aileron: number;
     elevator: number;
     rudder: number;
     throttle: number;
+  };
+  surfaces?: {
+    elevator_pos: number;
+    aileron_pos: number;
+    rudder_pos: number;
+    throttle_pos: number;
   };
   gear: {
     on_ground: boolean;
@@ -78,6 +104,7 @@ export interface StateMessage {
     reason: string | null;
     touchdown_fpm: number | null;
   };
+  expert?: ExpertTelemetry;
 }
 
 export type ServerMessage = HelloMessage | StateMessage;

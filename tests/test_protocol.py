@@ -51,12 +51,14 @@ def test_state_payload_contains_required_fields() -> None:
         "controls",
         "gear",
         "episode",
+        "surfaces",
     ):
         assert key in payload
     dumped = json.dumps(payload)
     assert "250.0" in dumped
     assert payload["controls"]["elevator"] == 0.2
     assert payload["episode"]["status"] == EpisodeStatus.IN_PROGRESS.value
+    assert "expert" not in payload
 
 
 def test_hello_payload_states_no_malecns() -> None:
@@ -68,4 +70,55 @@ def test_hello_payload_states_no_malecns() -> None:
 
     payload = hello_payload(_Fake())  # type: ignore[arg-type]
     assert payload["male_cns"] is False if "male_cns" in payload else payload["integrity"]["male_cns"] is False
+    assert payload["integrity"]["expert_is_biological"] is False
     assert payload["physics"] == "jsbsim"
+    assert payload["milestone"] == 2
+
+
+def test_state_payload_includes_expert_debug_when_present() -> None:
+    obs = AircraftObservation(
+        sim_time_s=1.0,
+        lat_deg=37.0,
+        lon_deg=-122.0,
+        alt_msl_m=200.0,
+        alt_agl_m=200.0,
+        east_m=-2000.0,
+        north_m=0.0,
+        up_m=200.0,
+        along_m=-2000.0,
+        right_m=4.0,
+        airspeed_kts=70.0,
+        groundspeed_kts=69.0,
+        vertical_speed_fpm=-400.0,
+        pitch_deg=-1.0,
+        roll_deg=0.0,
+        heading_deg=90.0,
+        alpha_deg=4.0,
+        aileron=0.1,
+        elevator=0.2,
+        rudder=0.0,
+        throttle=0.4,
+        on_ground=False,
+    )
+    payload = state_payload(
+        SandboxSnapshot(
+            obs,
+            EpisodeInfo(),
+            "expert",
+            False,
+            spawn_seed=3,
+            debug={
+                "kind": "conventional_autopilot",
+                "phase": "approach",
+                "target_airspeed_kts": 68.0,
+                "glideslope_error_deg": 0.2,
+                "centerline_error_m": 4.0,
+                "male_cns": False,
+            },
+        )
+    )
+    assert payload["controller"] == "expert"
+    assert payload["expert"]["kind"] == "conventional_autopilot"
+    assert payload["expert"]["male_cns"] is False
+    assert payload["spawn_seed"] == 3
+    assert "surfaces" in payload

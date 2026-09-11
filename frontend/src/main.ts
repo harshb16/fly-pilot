@@ -29,6 +29,7 @@ const renderHud = mountHud(hudRoot, {
       input.releaseSlider(axis);
     }
   },
+  onController: (name) => client.setController(name),
 });
 
 window.addEventListener("keydown", (event) => {
@@ -55,12 +56,15 @@ function frame(now: number): void {
   const dt = Math.min(0.05, (now - previous) / 1000);
   previous = now;
   const controls = input.update(dt);
-  if (client.status === "open" && changed(controls, lastControls)) {
-    client.sendControls(controls);
-    lastControls = controls;
-  } else if (client.status === "open" && now - lastHud > 80) {
-    client.sendControls(controls);
-    lastControls = controls;
+  const expert = client.state?.controller === "expert";
+  if (!expert) {
+    if (client.status === "open" && changed(controls, lastControls)) {
+      client.sendControls(controls);
+      lastControls = controls;
+    } else if (client.status === "open" && now - lastHud > 80) {
+      client.sendControls(controls);
+      lastControls = controls;
+    }
   }
   if (client.state) scene.applyState(client.state);
   scene.render();

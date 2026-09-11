@@ -1,7 +1,8 @@
 """FlyPilot backend.
 
-Milestone 1 is a real JSBSim Cessna 172 landing sandbox with a ManualController.
-MaleCNS connectome simulation is intentionally not present yet.
+Milestone 2 adds ExpertLandingController, a conventional classical autopilot
+used as a solvability baseline and expert-data generator. MaleCNS is still
+not in the loop.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

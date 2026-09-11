@@ -59,12 +59,28 @@ export function createCessna(): THREE.Group {
   hstab.position.set(0, 0.15, 3.15);
   aircraft.add(hstab);
 
+  const elevator = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.05, 0.38), white);
+  elevator.position.set(0, 0.15, 3.55);
+  elevator.name = "elevator";
+  aircraft.add(elevator);
+
   const vstab = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.8, 1.35), white);
   vstab.position.set(0, 1.05, 3.2);
   aircraft.add(vstab);
-  const rudderStripe = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, 0.18), stripe);
-  rudderStripe.position.set(0, 0.85, 3.5);
-  aircraft.add(rudderStripe);
+
+  const rudder = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.15, 0.42), stripe);
+  rudder.position.set(0, 0.95, 3.72);
+  rudder.name = "rudder";
+  aircraft.add(rudder);
+
+  const leftAileron = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.06, 0.42), white);
+  leftAileron.position.set(-4.2, 0.95, 0.55);
+  leftAileron.name = "leftAileron";
+  aircraft.add(leftAileron);
+  const rightAileron = leftAileron.clone();
+  rightAileron.position.x = 4.2;
+  rightAileron.name = "rightAileron";
+  aircraft.add(rightAileron);
 
   const spinner = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.28, 12), dark);
   spinner.rotation.x = -Math.PI / 2;
@@ -121,4 +137,21 @@ export function applyJsbsimPose(
   object.rotation.y = THREE.MathUtils.degToRad(-headingDeg);
   object.rotation.x = THREE.MathUtils.degToRad(pitchDeg);
   object.rotation.z = THREE.MathUtils.degToRad(-rollDeg);
+}
+
+export function applyJsbsimSurfaces(
+  object: THREE.Object3D,
+  elevatorPos: number,
+  aileronPos: number,
+  rudderPos: number,
+): void {
+  // JSBSim *_pos-norm: elevator positive = trailing-edge down (nose down).
+  const elevator = object.getObjectByName("elevator");
+  if (elevator) elevator.rotation.x = elevatorPos * 0.45;
+  const left = object.getObjectByName("leftAileron");
+  const right = object.getObjectByName("rightAileron");
+  if (left) left.rotation.x = -aileronPos * 0.45;
+  if (right) right.rotation.x = aileronPos * 0.45;
+  const rudder = object.getObjectByName("rudder");
+  if (rudder) rudder.rotation.y = -rudderPos * 0.45;
 }

@@ -17,6 +17,8 @@ htmlcov/
 .vscode/
 artifacts/
 data/malecns/
+data/expert/*.parquet
+!data/expert/.gitkeep
 *.npz
 *.feather
 .env

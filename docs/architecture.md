@@ -16,14 +16,17 @@ Three.js cockpit camera
   → Three.js
 ```
 
-Milestone 1 implements only the plant, transport, visualization, and a human controller.
+Milestone 1 implements the plant, transport, visualization, and a human controller.
+Milestone 2 adds `ExpertLandingController`, a **conventional classical autopilot**
+used as a solvability baseline and expert-data generator. MaleCNS is still not
+in the loop.
 
 ## Runtime processes
 
 1. **`fly_pilot.server`** (Python, port 8765)
    - Owns one `LandingSandbox`.
    - Steps JSBSim in wall-clock time (FDM dt = 1/120 s, catch-up capped).
-   - Accepts JSON commands: `controls`, `reset`, `pause`, `resume`.
+   - Accepts JSON commands: `controls`, `reset`, `pause`, `resume`, `set_controller`.
    - Broadcasts `hello` once per client and `state` at ~30 Hz.
 2. **Vite / Three.js** (port 5173)
    - Proxies `/ws` to the backend.
@@ -37,10 +40,16 @@ Milestone 1 implements only the plant, transport, visualization, and a human con
 | `state.py` | `AircraftControls`, `AircraftObservation`, episode enum |
 | `controllers/base.py` | `Controller.observe` / `act` |
 | `controllers/manual.py` | Stores browser inceptors |
-| `aircraft.py` | JSBSim `c172p` load, IC, engine, step, telemetry |
+| `controllers/expert.py` | Conventional cascaded-PID autoland (not MaleCNS) |
+| `controllers/pid.py` | Discrete PID with anti-windup |
+| `guidance.py` | Glideslope / heading-error geometry |
+| `initial_conditions.py` | Seeded modest approach randomization |
+| `aircraft.py` | JSBSim `c172p` load, IC, engine crank, step, telemetry |
 | `geodesy.py` | WGS84 metres/deg ENU around the runway origin |
 | `runway.py` | Threshold, heading 090, 1200×30 m, approach spawn |
 | `episode.py` | Land / crash / OOB / failed-approach rules |
+| `evaluate.py` | Headless expert evaluation |
+| `record_expert.py` | Parquet expert demonstrations |
 | `sandbox.py` | Glue: controller → FDM → episode → snapshot |
 | `protocol.py` | JSON schema |
 | `server.py` | `websockets` server + sim loop |
@@ -62,6 +71,10 @@ class Controller:
 - throttle ∈ [0, 1]
 
 JSBSim elevator sign conversion happens only in `aircraft.py`.
+
+`LandingSandbox.set_controller("manual"|"expert")` is the only legal switch.
+MaleCNS names are refused. `ExpertLandingController.telemetry()` is labelled
+`kind: conventional_autopilot`.
 
 ### Coordinate frames
 
@@ -91,14 +104,15 @@ Vanilla TypeScript. No React.
 - `aircraftMesh.ts` — low-poly high-wing Cessna; `applyJsbsimPose`
 - `runwayMesh.ts` — pavement, markings, chevrons, hills
 - `scene.ts` — lights, fog, chase / cockpit cameras
-- `hud.ts` — telemetry and integrity copy
+- `hud.ts` — telemetry, MANUAL/EXPERT selector, expert-autopilot readouts, integrity copy
 
-## What is explicitly out of Milestone 1
+## What is explicitly out of Milestone 2
 
 - MaleCNS download / sparse LIF / retina
 - Training (CMA-ES, RL, PyTorch)
-- Expert autoland
+- Pretending the expert autopilot is a fly
 - Photoreal scenery
 - React
+- Wind
 
-Those belong in later milestones, with the connectome remaining a real component if the project is described as fly-controlled.
+Those belong in later milestones, with the connectome remaining a real component if the project is described as fly-controlled. See `docs/expert-controller.md`.

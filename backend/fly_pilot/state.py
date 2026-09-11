@@ -70,6 +70,10 @@ class AircraftObservation:
     throttle: float
     on_ground: bool
     wow: tuple[bool, bool, bool] = (False, False, False)
+    p_deg_s: float = 0.0
+    q_deg_s: float = 0.0
+    r_deg_s: float = 0.0
+    beta_deg: float = 0.0
     extra: dict[str, float] = field(default_factory=dict)
 
 

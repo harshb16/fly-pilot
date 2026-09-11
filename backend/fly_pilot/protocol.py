@@ -31,10 +31,22 @@ def controls_from_message(data: dict[str, Any]) -> AircraftControls:
 def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
     runway: Runway = sandbox.runway
     approach = sandbox.approach
+    controller_name = sandbox.controller.name
+    if controller_name == "expert":
+        note = (
+            "ExpertLandingController is a conventional classical autopilot used as a "
+            "solvability baseline and expert-data generator. It is not MaleCNS and is "
+            "not biological computation."
+        )
+    else:
+        note = (
+            "Milestone 2 is a human-flown landing sandbox plus a conventional expert "
+            "autopilot. The MaleCNS connectome is not in the loop."
+        )
     return {
         "type": "hello",
-        "milestone": 1,
-        "controller": sandbox.controller.name,
+        "milestone": 2,
+        "controller": controller_name,
         "physics": "jsbsim",
         "aircraft": "c172p",
         "runway": {
@@ -56,7 +68,8 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
             "authoritative_physics": "JSBSim Cessna 172P",
             "visuals": "Three.js rendering of JSBSim state",
             "male_cns": False,
-            "note": "Milestone 1 is a human-flown landing sandbox. The MaleCNS connectome is not in the loop.",
+            "expert_is_biological": False,
+            "note": note,
         },
     }
 
@@ -64,11 +77,13 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
 def state_payload(snapshot: SandboxSnapshot) -> dict[str, Any]:
     obs = snapshot.observation
     ep = snapshot.episode
-    return {
+    extra = obs.extra or {}
+    payload: dict[str, Any] = {
         "type": "state",
         "sim_time": obs.sim_time_s,
         "paused": snapshot.paused,
         "controller": snapshot.controller_name,
+        "spawn_seed": snapshot.spawn_seed,
         "position": {
             "lat_deg": obs.lat_deg,
             "lon_deg": obs.lon_deg,
@@ -90,12 +105,22 @@ def state_payload(snapshot: SandboxSnapshot) -> dict[str, Any]:
             "roll_deg": obs.roll_deg,
             "heading_deg": obs.heading_deg,
             "alpha_deg": obs.alpha_deg,
+            "p_deg_s": obs.p_deg_s,
+            "q_deg_s": obs.q_deg_s,
+            "r_deg_s": obs.r_deg_s,
+            "beta_deg": obs.beta_deg,
         },
         "controls": {
             "aileron": obs.aileron,
             "elevator": obs.elevator,
             "rudder": obs.rudder,
             "throttle": obs.throttle,
+        },
+        "surfaces": {
+            "elevator_pos": extra.get("elevator_pos", obs.elevator),
+            "aileron_pos": extra.get("aileron_pos", obs.aileron),
+            "rudder_pos": extra.get("rudder_pos", obs.rudder),
+            "throttle_pos": extra.get("throttle_pos", obs.throttle),
         },
         "gear": {
             "on_ground": obs.on_ground,
@@ -107,3 +132,6 @@ def state_payload(snapshot: SandboxSnapshot) -> dict[str, Any]:
             "touchdown_fpm": ep.touchdown_fpm,
         },
     }
+    if snapshot.controller_name == "expert" and snapshot.debug:
+        payload["expert"] = snapshot.debug
+    return payload
