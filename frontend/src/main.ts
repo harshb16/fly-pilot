@@ -6,8 +6,9 @@ import { SimClient, websocketUrl } from "./simClient";
 import type { PilotControls } from "./protocol";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#scene");
-const hudRoot = document.querySelector<HTMLElement>("#hud");
-if (!canvas || !hudRoot) throw new Error("missing #scene or #hud");
+const hudEl = document.querySelector<HTMLElement>("#hud");
+if (!canvas || !hudEl) throw new Error("missing #scene or #hud");
+const hudRoot: HTMLElement = hudEl;
 
 const scene = new FlightScene(canvas);
 const input = new InputController();
