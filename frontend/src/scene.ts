@@ -14,7 +14,8 @@ export class FlightScene {
   mode: CameraMode = "chase";
   private readonly sun: THREE.DirectionalLight;
   private env: THREE.Group | null = null;
-  private readonly dummy = new THREE.Object3D();
+  private cameraInitialized = false;
+  private readonly lastAircraftPos = new THREE.Vector3();
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -26,7 +27,7 @@ export class FlightScene {
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xb7d4ea);
-    this.scene.fog = new THREE.Fog(0xb7d4ea, 1800, 14000);
+    this.scene.fog = new THREE.Fog(0xb7d4ea, 4500, 16000);
 
     this.chaseCamera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.4, 40000);
     this.cockpitCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.2, 40000);
@@ -70,7 +71,9 @@ export class FlightScene {
     applyJsbsimPose(this.aircraft, p.east_m, p.north_m, p.up_m, a.heading_deg, a.pitch_deg, a.roll_deg);
     const prop = this.aircraft.getObjectByName("prop");
     if (prop) prop.rotation.z += 0.8 + state.controls.throttle * 2.4;
-    this.updateCameras();
+    const jumped = this.cameraInitialized && this.lastAircraftPos.distanceTo(this.aircraft.position) > 150;
+    this.updateCameras(a.heading_deg, jumped);
+    this.lastAircraftPos.copy(this.aircraft.position);
   }
 
   currentCamera(): THREE.PerspectiveCamera {
@@ -81,22 +84,22 @@ export class FlightScene {
     this.renderer.render(this.scene, this.currentCamera());
   }
 
-  private updateCameras(): void {
+  private updateCameras(headingDeg: number, snap = false): void {
     this.aircraft.updateMatrixWorld();
-    const chase = this.dummy;
-    chase.position.copy(this.aircraft.position);
-    chase.rotation.copy(this.aircraft.rotation);
-    const back = new THREE.Vector3(0, 3.4, 14);
-    back.applyQuaternion(this.aircraft.quaternion);
-    this.chaseCamera.position.lerp(this.aircraft.position.clone().add(back), 0.18);
-    const look = this.aircraft.position.clone().add(new THREE.Vector3(0, 1.2, 0));
-    this.chaseCamera.lookAt(look);
+    const chasePos = this.aircraft.position
+      .clone()
+      .add(offsetAlongHeading(headingDeg, -24, 7.2))
+      .add(offsetRight(headingDeg, 7));
+    if (!this.cameraInitialized || snap) {
+      this.chaseCamera.position.copy(chasePos);
+      this.cameraInitialized = true;
+    } else {
+      this.chaseCamera.position.lerp(chasePos, 0.25);
+    }
+    this.chaseCamera.lookAt(this.aircraft.position.clone().add(offsetAlongHeading(headingDeg, 12, 1.2)));
 
-    const cockpit = new THREE.Vector3(0, 0.55, -1.5);
-    cockpit.applyQuaternion(this.aircraft.quaternion);
-    this.cockpitCamera.position.copy(this.aircraft.position).add(cockpit);
-    const forward = new THREE.Vector3(0, 0.35, -40).applyQuaternion(this.aircraft.quaternion);
-    this.cockpitCamera.lookAt(this.aircraft.position.clone().add(forward));
+    this.cockpitCamera.position.copy(this.aircraft.position.clone().add(offsetAlongHeading(headingDeg, 5.4, 0.9)));
+    this.cockpitCamera.lookAt(this.aircraft.position.clone().add(offsetAlongHeading(headingDeg, 80, 0.4)));
   }
 
   private resize(): void {
@@ -108,4 +111,18 @@ export class FlightScene {
     this.chaseCamera.updateProjectionMatrix();
     this.cockpitCamera.updateProjectionMatrix();
   }
+}
+
+function offsetAlongHeading(headingDeg: number, forwardM: number, upM: number): THREE.Vector3 {
+  const heading = THREE.MathUtils.degToRad(headingDeg);
+  const east = Math.sin(heading) * forwardM;
+  const north = Math.cos(heading) * forwardM;
+  return new THREE.Vector3(east, upM, -north);
+}
+
+function offsetRight(headingDeg: number, rightM: number): THREE.Vector3 {
+  const heading = THREE.MathUtils.degToRad(headingDeg);
+  const east = Math.cos(heading) * rightM;
+  const north = -Math.sin(heading) * rightM;
+  return new THREE.Vector3(east, 0, -north);
 }

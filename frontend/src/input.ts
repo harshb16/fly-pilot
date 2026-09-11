@@ -5,7 +5,7 @@ const STICK_RELEASE = 3.2;
 const THROTTLE_RATE = 0.55;
 
 export class InputController {
-  controls: PilotControls = { aileron: 0, elevator: 0, rudder: 0, throttle: 0.42 };
+  controls: PilotControls = { aileron: 0, elevator: 0, rudder: 0, throttle: 0.5 };
   private keys = new Set<string>();
   private sliderHeld = new Set<keyof PilotControls>();
 

@@ -82,6 +82,9 @@ Do not copy Fly64 source. It has no license file. Use `docs/research-notes.md` a
 - Vite must proxy `/ws`; the browser should not hard-code `localhost:8765` (breaks Cloud previews).
 - After land/crash the sandbox pauses so the airplane is not driven into the mesh. Reset clears `paused`.
 - Visual frame is X=east, Y=up, Z=south so heading 0 looks down −Z (north). Pose mapping is in `applyJsbsimPose`.
+- Do not iterate `self.clients` while awaiting sends; disconnect handlers mutate the set. Iterate `list(self.clients)`.
+- Pause the FDM when no browser is connected, and `reset()` on the first new client. Otherwise a Cloud agent that starts the server then opens the UI minutes later finds the Cessna already past the runway.
+- `run_ic()` restores ICs but does **not** zero `simulation/sim-time-sec` on JSBSim 1.3.1. Call `set_sim_time(0)` or episode timeouts accumulate across resets.
 
 ## Later controllers (do not stub)
 

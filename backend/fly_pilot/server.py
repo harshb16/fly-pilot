@@ -26,10 +26,16 @@ class SimServer:
         self.host = host
         self.port = port
         self.sandbox = LandingSandbox()
+        self.sandbox.paused = True
         self.clients: set[ServerConnection] = set()
 
     async def handler(self, websocket: ServerConnection) -> None:
+        first_client = not self.clients
         self.clients.add(websocket)
+        if first_client:
+            # Opening the UI always starts on short final, even if the
+            # process has been alive for a while with nobody connected.
+            self.sandbox.reset()
         LOGGER.info("client connected (%s)", len(self.clients))
         try:
             await websocket.send(json.dumps(hello_payload(self.sandbox)))
@@ -40,6 +46,8 @@ class SimServer:
             LOGGER.exception("client handler failed")
         finally:
             self.clients.discard(websocket)
+            if not self.clients:
+                self.sandbox.paused = True
             LOGGER.info("client disconnected (%s)", len(self.clients))
 
     def _handle_message(self, raw: str | bytes) -> None:
@@ -66,7 +74,7 @@ class SimServer:
             return
         message = json.dumps(payload)
         stale: list[ServerConnection] = []
-        for client in self.clients:
+        for client in list(self.clients):
             try:
                 await client.send(message)
             except Exception:
@@ -80,15 +88,20 @@ class SimServer:
         emit_carry = 0.0
         emit_dt = 1.0 / 30.0
         while True:
-            now = loop.time()
-            wall_dt = min(now - last, 0.25)
-            last = now
-            self.sandbox.step_realtime(wall_dt)
-            emit_carry += wall_dt
-            if emit_carry >= emit_dt:
-                emit_carry = 0.0
-                await self.broadcast(state_payload(self.sandbox.snapshot()))
-            await asyncio.sleep(0.0)
+            try:
+                now = loop.time()
+                wall_dt = min(now - last, 0.25)
+                last = now
+                self.sandbox.step_realtime(wall_dt)
+                emit_carry += wall_dt
+                if emit_carry >= emit_dt:
+                    emit_carry = 0.0
+                    if self.clients:
+                        await self.broadcast(state_payload(self.sandbox.snapshot()))
+                await asyncio.sleep(0.004)
+            except Exception:
+                LOGGER.exception("sim loop error")
+                await asyncio.sleep(0.05)
 
     async def run(self) -> None:
         LOGGER.info("JSBSim Cessna 172 sandbox on ws://%s:%s", self.host, self.port)

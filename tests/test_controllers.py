@@ -42,7 +42,7 @@ def test_manual_controller_clamps_and_returns_pilot_input() -> None:
     assert out.rudder == 0.25
     assert out.throttle == 1.0
     ctl.reset()
-    assert ctl.act().throttle == 0.4
+    assert ctl.act().throttle == 0.5
 
 
 def test_manual_observe_does_not_invent_controls() -> None:

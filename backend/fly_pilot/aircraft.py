@@ -63,6 +63,7 @@ class Cessna172:
 
         if not self.fdm.run_ic():
             raise RuntimeError("JSBSim run_ic() failed")
+        self.fdm.set_sim_time(0.0)
 
         self._start_engine()
         self._last_controls = AircraftControls(throttle=self.approach.throttle)

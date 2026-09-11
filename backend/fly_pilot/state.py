@@ -32,7 +32,7 @@ class AircraftControls:
     aileron: float = 0.0
     elevator: float = 0.0
     rudder: float = 0.0
-    throttle: float = 0.4
+    throttle: float = 0.5
 
     def clamped(self) -> AircraftControls:
         return AircraftControls(

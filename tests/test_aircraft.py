@@ -59,6 +59,7 @@ def test_reset_restores_approach_state(aircraft: Cessna172) -> None:
     assert abs(second.along_m - first.along_m) < 20.0
     assert abs(second.roll_deg) < 2.0
     assert abs(second.airspeed_kts - first.airspeed_kts) < 5.0
+    assert second.sim_time_s < 0.05
 
 
 def test_sandbox_manual_loop_is_stable() -> None:

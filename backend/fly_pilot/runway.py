@@ -40,7 +40,7 @@ class ApproachConfig:
     airspeed_kts: float = 70.0
     flight_path_deg: float = -4.5
     alpha_deg: float = 4.0
-    throttle: float = 0.42
+    throttle: float = 0.5
     flaps_norm: float = 0.4
     mixture_norm: float = 0.9
 

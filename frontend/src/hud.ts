@@ -34,7 +34,7 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
       ${slider("aileron", "Aileron", -1, 1, 0)}
       ${slider("elevator", "Elevator", -1, 1, 0)}
       ${slider("rudder", "Rudder", -1, 1, 0)}
-      ${slider("throttle", "Throttle", 0, 1, 0.42)}
+      ${slider("throttle", "Throttle", 0, 1, 0.5)}
       <div class="buttons">
         <button id="btn-reset" type="button">Reset</button>
         <button id="btn-pause" type="button">Pause</button>

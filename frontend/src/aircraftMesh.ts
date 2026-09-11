@@ -59,8 +59,8 @@ export function createCessna(): THREE.Group {
   hstab.position.set(0, 0.15, 3.15);
   aircraft.add(hstab);
 
-  const vstab = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.35, 1.1), white);
-  vstab.position.set(0, 0.85, 3.15);
+  const vstab = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.8, 1.35), white);
+  vstab.position.set(0, 1.05, 3.2);
   aircraft.add(vstab);
   const rudderStripe = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, 0.18), stripe);
   rudderStripe.position.set(0, 0.85, 3.5);
