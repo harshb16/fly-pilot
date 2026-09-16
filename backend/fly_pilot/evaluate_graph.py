@@ -67,7 +67,9 @@ def write_demo(checkpoint: Path, seed: int, output: Path) -> str:
     while snap.episode.status is EpisodeStatus.IN_PROGRESS:
         snap = sandbox.step_once()
         obs = snap.observation
-        if obs.sim_time_s - last_time >= 0.10:
+        # The README demo is a time-lapse, not an analysis trace. Roughly 140
+        # frames keeps the committed GIF small and quick to regenerate.
+        if obs.sim_time_s - last_time >= 0.75:
             controls = snap.applied_controls
             frames.append(
                 TraceFrame(
@@ -86,7 +88,12 @@ def write_demo(checkpoint: Path, seed: int, output: Path) -> str:
             )
             last_time = obs.sim_time_s
     output.parent.mkdir(parents=True, exist_ok=True)
-    write_approach_video(frames, output, title="HYBRID FLY GUIDANCE landing")
+    write_approach_video(
+        frames,
+        output,
+        title="HYBRID FLY GUIDANCE landing",
+        subtitle="MaleCNS-topology bank residual + conventional autoland",
+    )
     return snap.episode.status.value
 
 

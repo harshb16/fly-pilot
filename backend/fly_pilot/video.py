@@ -33,7 +33,13 @@ class TraceFrame:
     status: str = "in_progress"
 
 
-def write_approach_video(frames: list[TraceFrame], path: Path, *, title: str = "FLY CONTROL") -> Path | None:
+def write_approach_video(
+    frames: list[TraceFrame],
+    path: Path,
+    *,
+    title: str = "FLY CONTROL",
+    subtitle: str = "fixed MaleCNS + trained temporal decoder (not biological learning)",
+) -> Path | None:
     if not frames or plt is None or animation is None:
         return None
     path = Path(path)
@@ -42,7 +48,9 @@ def write_approach_video(frames: list[TraceFrame], path: Path, *, title: str = "
     right = np.array([f.right_m for f in frames])
     alt = np.array([f.alt_agl_m for f in frames])
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.2))
-    fig.suptitle(title + "\nfixed MaleCNS + trained temporal decoder (not biological learning)", fontsize=10)
+    heading = title if not subtitle else f"{title}\n{subtitle}"
+    fig.suptitle(heading, fontsize=10)
+    fig.subplots_adjust(top=0.78, bottom=0.16, wspace=0.28)
     ax0, ax1 = axes
     ax0.set_title("top-down")
     ax0.set_xlabel("along (m)")
