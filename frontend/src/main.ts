@@ -57,7 +57,7 @@ function frame(now: number): void {
   const dt = Math.min(0.05, (now - previous) / 1000);
   previous = now;
   const controls = input.update(dt);
-  const expert = client.state?.controller === "expert" || client.state?.controller === "expert_observing" || client.state?.controller === "fly_control";
+  const expert = client.state?.controller === "expert" || client.state?.controller === "expert_observing" || client.state?.controller === "fly_control" || client.state?.controller === "hybrid_guidance";
   if (!expert) {
     if (client.status === "open" && changed(controls, lastControls)) {
       client.sendControls(controls);

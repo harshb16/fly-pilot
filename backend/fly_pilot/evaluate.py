@@ -124,6 +124,9 @@ def format_report(summary: dict, rows: list[EpisodeMetrics]) -> str:
     if ctl.get("name") == "TrainedMaleCNSController":
         heading = "FlyPilot FLY CONTROL evaluation"
         sub = "(fixed MaleCNS + trained temporal decoder — not biological learning; expert not in the loop)"
+    elif ctl.get("name") == "ConnectomeGraphController":
+        heading = "FlyPilot CONNECTOME GRAPH evaluation"
+        sub = "(task-trained MaleCNS population topology + aircraft telemetry — not a fixed-brain simulation)"
     else:
         heading = "FlyPilot ExpertLandingController evaluation"
         sub = "(conventional classical autopilot — not MaleCNS)"

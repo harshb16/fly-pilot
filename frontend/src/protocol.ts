@@ -5,7 +5,7 @@ export type EpisodeStatus =
   | "out_of_bounds"
   | "failed_approach";
 
-export type ControllerName = "manual" | "expert" | "expert_observing" | "fly_control";
+export type ControllerName = "manual" | "expert" | "expert_observing" | "fly_control" | "hybrid_guidance";
 
 export interface ModeCapability {
   available: boolean;
@@ -41,11 +41,13 @@ export interface HelloMessage {
     authoritative_physics: string;
     visuals: string;
     male_cns: boolean;
+    male_cns_topology?: boolean;
     male_cns_observing?: boolean;
     fly_controls_aircraft?: boolean;
     expert_is_biological?: boolean;
     biological_learning?: boolean;
     decoder_input?: string | null;
+    guidance_input?: string | null;
     note: string;
   };
   schedule?: {
@@ -125,6 +127,25 @@ export interface FlyControlTelemetry {
   slew_alpha?: number;
 }
 
+export interface HybridGuidanceTelemetry {
+  kind: string;
+  label?: string;
+  male_cns_topology: boolean;
+  fixed_malecns: boolean;
+  biological_learning: boolean;
+  expert_in_loop: boolean;
+  uses_aircraft_telemetry: boolean;
+  control_scope?: string;
+  aileron: number;
+  elevator: number;
+  rudder: number;
+  throttle: number;
+  roll_command_deg: number;
+  pitch_command_deg: number;
+  target_airspeed_kts: number;
+  throttle_trim: number;
+}
+
 export interface StateMessage {
   type: "state";
   sim_time: number;
@@ -183,6 +204,7 @@ export interface StateMessage {
   expert?: ExpertTelemetry;
   fly_observing?: FlyObservingTelemetry;
   fly_control?: FlyControlTelemetry;
+  hybrid_guidance?: HybridGuidanceTelemetry;
 }
 
 export type ServerMessage = HelloMessage | StateMessage | ErrorMessage;

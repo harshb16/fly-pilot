@@ -74,7 +74,7 @@ export class SimClient {
     this.send({ type: "resume" });
   }
 
-  setController(name: "manual" | "expert" | "expert_observing" | "fly_control"): void {
+  setController(name: "manual" | "expert" | "expert_observing" | "fly_control" | "hybrid_guidance"): void {
     this.send({ type: "set_controller", name });
   }
 

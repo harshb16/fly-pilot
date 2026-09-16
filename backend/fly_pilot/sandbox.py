@@ -21,6 +21,7 @@ from fly_pilot.brain.scheduler import SimScheduler
 from fly_pilot.brain.vision.scene import FlyViewPose
 from fly_pilot.controllers.base import Controller
 from fly_pilot.controllers.expert import ExpertLandingController
+from fly_pilot.controllers.graph import ConnectomeGraphController
 from fly_pilot.controllers.manual import ManualController
 from fly_pilot.controllers.trained import TrainedMaleCNSController
 from fly_pilot.episode import EpisodeMonitor
@@ -28,8 +29,8 @@ from fly_pilot.initial_conditions import DECODER_SPAWN, SpawnRandomization, Spaw
 from fly_pilot.runway import ApproachConfig, Runway
 from fly_pilot.state import AircraftControls, AircraftObservation, EpisodeInfo
 
-ALLOWED_CONTROLLERS = ("manual", "expert", "expert_observing", "fly_control")
-CONTROL_AUTHORITY = ("manual", "expert", "fly_control")
+ALLOWED_CONTROLLERS = ("manual", "expert", "expert_observing", "fly_control", "hybrid_guidance")
+CONTROL_AUTHORITY = ("manual", "expert", "fly_control", "hybrid_guidance")
 UNIMPLEMENTED_MALE_CNS = ("malecns", "male_cns")
 
 
@@ -81,7 +82,7 @@ class LandingSandbox:
         self.decoder_path = decoder_path
         self.spawn_spec = spawn_spec
         if randomize_spawns is None:
-            self.randomize_spawns = self.controller.name in ("expert", "fly_control")
+            self.randomize_spawns = self.controller.name in ("expert", "fly_control", "hybrid_guidance")
         else:
             self.randomize_spawns = randomize_spawns
         self.reset()
@@ -90,6 +91,8 @@ class LandingSandbox:
     def mode(self) -> str:
         if isinstance(self.controller, TrainedMaleCNSController):
             return "fly_control"
+        if isinstance(self.controller, ConnectomeGraphController):
+            return "hybrid_guidance"
         if self.observing:
             return "expert_observing"
         return self.controller.name
@@ -112,6 +115,9 @@ class LandingSandbox:
         )
         checkpoint = Path(self.decoder_path or default_checkpoint_path())
         fly_ready = brain_ready and checkpoint.exists()
+        from fly_pilot.brain.graph_policy import default_graph_checkpoint_path
+
+        graph_checkpoint = default_graph_checkpoint_path()
         return {
             "manual": {"available": True, "reason": None, "action": None},
             "expert": {"available": True, "reason": None, "action": None},
@@ -141,6 +147,11 @@ class LandingSandbox:
                     )
                 ),
             },
+            "hybrid_guidance": {
+                "available": graph_checkpoint.exists(),
+                "reason": None if graph_checkpoint.exists() else f"Graph-policy checkpoint is missing at {graph_checkpoint}.",
+                "action": None if graph_checkpoint.exists() else "Train it with python -m fly_pilot.train_graph_policy.",
+            },
         }
 
     def set_controller(self, name: str) -> SandboxSnapshot:
@@ -149,10 +160,12 @@ class LandingSandbox:
             key = "expert_observing"
         if key in ("trained", "trained_malecns", "trained_male_cns"):
             key = "fly_control"
+        if key in ("graph", "graph_control", "connectome_graph", "learned_graph", "hybrid"):
+            key = "hybrid_guidance"
         if key in UNIMPLEMENTED_MALE_CNS:
             raise ValueError(
                 "Untrained MaleCNSController is not implemented. "
-                "Choose 'manual', 'expert', 'expert_observing', or 'fly_control' "
+                "Choose 'manual', 'expert', 'expert_observing', 'fly_control', or 'hybrid_guidance' "
                 "(fixed MaleCNS + trained temporal decoder)."
             )
         if key not in ALLOWED_CONTROLLERS:
@@ -178,9 +191,14 @@ class LandingSandbox:
             next_randomize = True
             next_observing = True
             next_spawn = None
-        else:
+        elif key == "fly_control":
             assert next_observer is not None
             next_controller = TrainedMaleCNSController.load(next_observer, self.decoder_path)
+            next_randomize = True
+            next_observing = False
+            next_spawn = DECODER_SPAWN
+        else:
+            next_controller = ConnectomeGraphController.load(runway=self.runway)
             next_randomize = True
             next_observing = False
             next_spawn = DECODER_SPAWN
@@ -198,7 +216,7 @@ class LandingSandbox:
             self.observing = next_observing
             self.spawn_spec = next_spawn
             if self.controller.name not in CONTROL_AUTHORITY:
-                raise RuntimeError("control authority must remain manual, expert, or fly_control")
+                raise RuntimeError("invalid control authority")
             if self.mode == "fly_control" and isinstance(self.controller, ExpertLandingController):
                 raise RuntimeError("FLY CONTROL must not instantiate ExpertLandingController")
             return self.reset()

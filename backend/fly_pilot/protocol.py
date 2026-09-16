@@ -48,6 +48,12 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
             "JSBSim inceptors. This is not biological synaptic learning. "
             "ExpertLandingController is not in the loop. Decoder input is DN activity only."
         )
+    elif mode == "hybrid_guidance":
+        note = (
+            "HYBRID FLY GUIDANCE: a task-trained policy constrained by aggregated "
+            "MaleCNS population topology sets roll, pitch, airspeed, and throttle targets. "
+            "Conventional PID inner loops stabilize the Cessna. Aircraft telemetry is a policy input."
+        )
     elif mode == "expert_observing":
         note = (
             "EXPERT + FLY OBSERVING: ExpertLandingController (conventional autopilot) "
@@ -66,6 +72,7 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
             "FLY CONTROL uses frozen MaleCNS plus an external trained decoder."
         )
     fly_controls = mode == "fly_control"
+    hybrid_controls = mode == "hybrid_guidance"
     payload: dict[str, Any] = {
         "type": "hello",
         "milestone": 5,
@@ -92,11 +99,13 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
             "authoritative_physics": "JSBSim Cessna 172P",
             "visuals": "Three.js human view; Python cubemap is canonical MaleCNS input",
             "male_cns": fly_controls or observing,
+            "male_cns_topology": hybrid_controls,
             "male_cns_observing": observing,
             "fly_controls_aircraft": fly_controls,
             "expert_is_biological": False,
             "biological_learning": False,
             "decoder_input": "dn_windowed_rates" if fly_controls else None,
+            "guidance_input": "aircraft_telemetry" if hybrid_controls else None,
             "note": note,
         },
         "schedule": {
@@ -198,6 +207,29 @@ def state_payload(snapshot: SandboxSnapshot) -> dict[str, Any]:
                 "gru_hidden_mean",
                 "decoded_neural_step",
                 "slew_alpha",
+            )
+            if k in snapshot.debug
+        }
+    if snapshot.ui_mode == "hybrid_guidance":
+        payload["hybrid_guidance"] = {
+            k: snapshot.debug[k]
+            for k in (
+                "kind",
+                "label",
+                "male_cns_topology",
+                "fixed_malecns",
+                "biological_learning",
+                "expert_in_loop",
+                "uses_aircraft_telemetry",
+                "control_scope",
+                "aileron",
+                "elevator",
+                "rudder",
+                "throttle",
+                "roll_command_deg",
+                "pitch_command_deg",
+                "target_airspeed_kts",
+                "throttle_trim",
             )
             if k in snapshot.debug
         }

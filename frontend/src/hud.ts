@@ -8,7 +8,7 @@ export interface HudHandlers {
   onResume: () => void;
   onCamera: (mode: CameraMode) => void;
   onSlider: (axis: keyof PilotControls, value: number, holding: boolean) => void;
-  onController: (name: "manual" | "expert" | "expert_observing" | "fly_control") => void;
+  onController: (name: "manual" | "expert" | "expert_observing" | "fly_control" | "hybrid_guidance") => void;
 }
 
 export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudModel) => void {
@@ -23,6 +23,7 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
         <button id="btn-expert" type="button">EXPERT</button>
         <button id="btn-observing" type="button">EXPERT + FLY OBSERVING</button>
         <button id="btn-fly" type="button">FLY CONTROL</button>
+        <button id="btn-hybrid" type="button">HYBRID FLY GUIDANCE</button>
       </div>
       <div id="status-pill" class="pill">connecting</div>
     </div>
@@ -89,6 +90,18 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
       <div class="readout"><span>GRU ‖h‖</span><strong id="fc-gru">—</strong></div>
       <div class="readout"><span>DN N</span><strong id="fc-ndn">—</strong></div>
     </div>
+    <div class="panel hybrid-guidance" id="hybrid-panel" hidden>
+      <div class="fly-banner">HYBRID FLY GUIDANCE</div>
+      <p class="observing-note">TASK-TRAINED MALECNS POPULATION TOPOLOGY + CONVENTIONAL PID STABILIZATION. Uses aircraft telemetry; not a fixed-brain simulation.</p>
+      <div class="readout"><span>ROLL CMD</span><strong id="hg-roll">—</strong><em>°</em></div>
+      <div class="readout"><span>PITCH CMD</span><strong id="hg-pitch">—</strong><em>°</em></div>
+      <div class="readout"><span>IAS CMD</span><strong id="hg-ias">—</strong><em>kt</em></div>
+      <div class="readout"><span>THR TRIM</span><strong id="hg-trim">—</strong></div>
+      <div class="readout"><span>AIL</span><strong id="hg-ail">—</strong></div>
+      <div class="readout"><span>ELV</span><strong id="hg-elv">—</strong></div>
+      <div class="readout"><span>RDR</span><strong id="hg-rdr">—</strong></div>
+      <div class="readout"><span>THR</span><strong id="hg-thr">—</strong></div>
+    </div>
     <div class="panel controls">
       ${slider("aileron", "Aileron", -1, 1, 0)}
       ${slider("elevator", "Elevator", -1, 1, 0)}
@@ -119,6 +132,7 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
   root.querySelector("#btn-expert")?.addEventListener("click", () => handlers.onController("expert"));
   root.querySelector("#btn-observing")?.addEventListener("click", () => handlers.onController("expert_observing"));
   root.querySelector("#btn-fly")?.addEventListener("click", () => handlers.onController("fly_control"));
+  root.querySelector("#btn-hybrid")?.addEventListener("click", () => handlers.onController("hybrid_guidance"));
 
   for (const axis of ["aileron", "elevator", "rudder", "throttle"] as const) {
     const input = root.querySelector<HTMLInputElement>(`#${axis}`);
@@ -183,7 +197,7 @@ function renderHud(root: HTMLElement, model: HudModel): void {
   }
 
   const controller = state?.controller ?? model.hello?.controller ?? "manual";
-  const flown = controller === "expert" || controller === "expert_observing" || controller === "fly_control";
+  const flown = controller === "expert" || controller === "expert_observing" || controller === "fly_control" || controller === "hybrid_guidance";
   const shown = flown && state ? state.controls : model.localControls;
   syncSlider(root, "aileron", shown.aileron);
   syncSlider(root, "elevator", shown.elevator);
@@ -194,6 +208,7 @@ function renderHud(root: HTMLElement, model: HudModel): void {
   root.querySelector("#btn-expert")?.classList.toggle("active", controller === "expert");
   root.querySelector("#btn-observing")?.classList.toggle("active", controller === "expert_observing");
   root.querySelector("#btn-fly")?.classList.toggle("active", controller === "fly_control");
+  root.querySelector("#btn-hybrid")?.classList.toggle("active", controller === "hybrid_guidance");
   setModeAvailability(root, model.hello);
 
   const expertPanel = root.querySelector<HTMLElement>("#expert-panel");
@@ -245,9 +260,28 @@ function renderHud(root: HTMLElement, model: HudModel): void {
     }
   }
 
+  const hybridPanel = root.querySelector<HTMLElement>("#hybrid-panel");
+  if (hybridPanel) {
+    const show = controller === "hybrid_guidance";
+    hybridPanel.hidden = !show;
+    const hybrid = state?.hybrid_guidance;
+    if (show && hybrid) {
+      setText(root, "hg-roll", fmt(hybrid.roll_command_deg, 1));
+      setText(root, "hg-pitch", fmt(hybrid.pitch_command_deg, 1));
+      setText(root, "hg-ias", fmt(hybrid.target_airspeed_kts, 0));
+      setText(root, "hg-trim", fmt(hybrid.throttle_trim, 2));
+      setText(root, "hg-ail", fmt(hybrid.aileron, 2));
+      setText(root, "hg-elv", fmt(hybrid.elevator, 2));
+      setText(root, "hg-rdr", fmt(hybrid.rudder, 2));
+      setText(root, "hg-thr", fmt(hybrid.throttle, 2));
+    }
+  }
+
   const sub = root.querySelector("#milestone-sub");
   if (sub) {
-    if (controller === "fly_control") {
+    if (controller === "hybrid_guidance") {
+      sub.textContent = "Research platform · HYBRID FLY GUIDANCE · connectome topology + conventional stabilization";
+    } else if (controller === "fly_control") {
       sub.textContent = "Milestone 5 · FLY CONTROL · fixed MaleCNS + trained temporal decoder";
     } else if (controller === "expert_observing") {
       sub.textContent = "Milestone 5 · EXPERT + FLY OBSERVING · fly is not controlling";
@@ -270,6 +304,7 @@ function setModeAvailability(root: HTMLElement, hello: HelloMessage | null): voi
     ["expert", "btn-expert"],
     ["expert_observing", "btn-observing"],
     ["fly_control", "btn-fly"],
+    ["hybrid_guidance", "btn-hybrid"],
   ] as const;
   for (const [mode, id] of pairs) {
     const button = root.querySelector<HTMLButtonElement>(`#${id}`);

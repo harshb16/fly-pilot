@@ -16,6 +16,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from fly_pilot.controllers.expert import ExpertLandingController
+from fly_pilot.initial_conditions import DECODER_SPAWN
 from fly_pilot.sandbox import LandingSandbox
 from fly_pilot.state import EpisodeStatus
 
@@ -50,6 +51,10 @@ COLUMNS = [
     "elevator",
     "rudder",
     "throttle",
+    "roll_command_deg",
+    "pitch_command_deg",
+    "target_airspeed_kts",
+    "throttle_trim",
     "phase",
     "outcome",
 ]
@@ -93,6 +98,10 @@ def _row(episode_id: int, seed: int, sandbox: LandingSandbox, outcome: str) -> d
         "elevator": obs.elevator,
         "rudder": obs.rudder,
         "throttle": obs.throttle,
+        "roll_command_deg": float(tel.get("roll_command_deg", 0.0)),
+        "pitch_command_deg": float(tel.get("pitch_command_deg", 0.0)),
+        "target_airspeed_kts": float(tel.get("target_airspeed_kts", 0.0)),
+        "throttle_trim": float(tel.get("throttle_trim", 0.0)),
         "phase": phase,
         "outcome": outcome,
     }
@@ -104,6 +113,7 @@ def record_episodes(
     seed: int,
     success_only: bool = False,
     stride: int = 2,
+    wide_spawns: bool = False,
 ) -> dict:
     """Run expert landings and write one Parquet file.
 
@@ -113,6 +123,7 @@ def record_episodes(
     sandbox = LandingSandbox(
         controller=ExpertLandingController(),
         randomize_spawns=True,
+        spawn_spec=DECODER_SPAWN if wide_spawns else None,
     )
     chunks: list[pa.Table] = []
     kept = 0
@@ -154,6 +165,7 @@ def record_episodes(
         "successes": successes,
         "rows": rows,
         "stride": stride,
+        "spawn_distribution": "decoder_wide" if wide_spawns else "default",
         "controller": "ExpertLandingController",
         "kind": "conventional_autopilot",
         "male_cns": False,
@@ -187,8 +199,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=Path("data/expert/demonstrations.parquet"))
     parser.add_argument("--success-only", action="store_true")
     parser.add_argument("--stride", type=int, default=2, help="Keep every Nth FDM step (2 = 60 Hz)")
+    parser.add_argument("--wide-spawns", action="store_true", help="Use the wider held-out controller spawn distribution")
     args = parser.parse_args(argv)
-    info = record_episodes(args.output, args.episodes, args.seed, args.success_only, args.stride)
+    info = record_episodes(args.output, args.episodes, args.seed, args.success_only, args.stride, args.wide_spawns)
     print(json_dumps(info))
     return 0
 

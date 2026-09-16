@@ -85,6 +85,7 @@ class ExpertLandingController(Controller):
         self._pitch_pid = PID(0.07, 0.012, 0.0, -0.8, 0.8, 0.45)
         self._speed_pid = PID(0.04, 0.01, 0.0, -0.45, 0.45, 0.35)
         self._telemetry: dict[str, float | str | bool] = {}
+        self._guidance: dict[str, float] = {}
 
     @property
     def name(self) -> str:
@@ -103,6 +104,7 @@ class ExpertLandingController(Controller):
         self._pitch_pid.reset()
         self._speed_pid.reset()
         self._telemetry = {}
+        self._guidance = {}
 
     def observe(self, observation: AircraftObservation) -> None:
         self._prev = self._obs
@@ -170,6 +172,7 @@ class ExpertLandingController(Controller):
         else:
             roll_lim = 7.0
         roll_cmd = 0.0 if phase is LandingPhase.ROLLOUT else clamp(g.heading_to_roll * hdg_err, -roll_lim, roll_lim)
+        self._guidance["roll_command_deg"] = roll_cmd
         roll_err = roll_cmd - obs.roll_deg
         aileron = self._roll_pid.update(roll_err, dt, deriv=-obs.p_deg_s)
         aileron = clamp(aileron + g.roll_rate_aileron * (obs.p_deg_s * 3.1415926535 / 180.0), -1.0, 1.0)
@@ -196,6 +199,11 @@ class ExpertLandingController(Controller):
             ias_cmd = g.flare_ias_kts
             thr_trim = 0.08
         elif phase in (LandingPhase.TOUCHDOWN, LandingPhase.ROLLOUT):
+            self._guidance.update(
+                pitch_command_deg=3.0,
+                target_airspeed_kts=0.0,
+                throttle_trim=0.0,
+            )
             elevator = clamp(0.18 - 0.02 * obs.pitch_deg, 0.05, 0.45)
             return elevator, 0.0
         else:
@@ -207,6 +215,12 @@ class ExpertLandingController(Controller):
             )
             ias_cmd = g.stabilize_ias_kts if phase is LandingPhase.STABILIZE else g.approach_ias_kts
             thr_trim = g.approach_throttle_trim if gs_err_m > 8.0 else g.high_gs_throttle_trim
+
+        self._guidance.update(
+            pitch_command_deg=pitch_cmd,
+            target_airspeed_kts=ias_cmd,
+            throttle_trim=thr_trim,
+        )
 
         pitch_err = pitch_cmd - obs.pitch_deg
         elevator = self._pitch_pid.update(pitch_err, dt, deriv=-obs.q_deg_s)
@@ -251,4 +265,5 @@ class ExpertLandingController(Controller):
             "elevator": controls.elevator,
             "rudder": controls.rudder,
             "throttle": controls.throttle,
+            **self._guidance,
         }
