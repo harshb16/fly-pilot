@@ -198,7 +198,7 @@ def main(argv: list[str] | None = None) -> int:
         observer = synthetic_observer(seed=64) if args.synthetic_causality else ObservingMaleCNS.load()
         report["retina_to_dn"] = retina_to_dn_causality(observer)
     args.json.parent.mkdir(parents=True, exist_ok=True)
-    args.json.write_text(json.dumps(report, indent=2) + "\n")
+    args.json.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
     print(json.dumps(report, indent=2))
     return 0
 

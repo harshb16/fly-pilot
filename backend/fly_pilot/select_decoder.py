@@ -131,7 +131,9 @@ def run_matrix(
         "ranking": [row["name"] for row in ranked],
         "winner": winner,
     }
-    (final_dir / "model-selection.json").write_text(json.dumps(report, indent=2) + "\n")
+    (final_dir / "model-selection.json").write_text(
+        json.dumps(report, indent=2, allow_nan=False) + "\n"
+    )
     return report
 
 

@@ -25,6 +25,7 @@ from fly_pilot.brain.vision.scene import empty_atlas
 from fly_pilot.controllers.expert import ExpertLandingController
 from fly_pilot.controllers.trained import TrainedMaleCNSController
 from fly_pilot.diagnose_decoder import dataset_diagnostics
+from fly_pilot.evaluate_decoder import _metrics
 from fly_pilot.disturbance import ControlDisturbance
 from fly_pilot.record_decoder import DECODER_FORBIDDEN_INPUTS, DECODER_INPUT_COLUMNS, record_decoder_episodes
 from fly_pilot.record_dagger import record_dagger_episodes
@@ -316,6 +317,14 @@ def test_streaming_scaler_matches_direct_statistics() -> None:
     direct = np.concatenate([episodes[i]["x"] for i in range(3)], axis=0)
     np.testing.assert_allclose(mean, direct.mean(axis=0), atol=1e-6)
     np.testing.assert_allclose(std, direct.std(axis=0), atol=1e-6)
+
+
+def test_constant_baseline_metrics_are_strict_json() -> None:
+    target = np.arange(20, dtype=np.float32).reshape(5, 4)
+    constant = np.broadcast_to(target.mean(axis=0), target.shape)
+    metrics = _metrics(target, constant)
+    assert all(control["pearson"] is None for control in metrics.values())
+    json.dumps(metrics, allow_nan=False)
 
 
 def test_dagger_uses_fly_authority_and_shadow_labels_only(tmp_path: Path) -> None:

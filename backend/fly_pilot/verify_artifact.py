@@ -100,7 +100,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     if args.json is not None:
         args.json.parent.mkdir(parents=True, exist_ok=True)
-        args.json.write_text(json.dumps(report, indent=2) + "\n")
+        args.json.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
     print(json.dumps(report, indent=2))
     return 0
 

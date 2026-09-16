@@ -188,7 +188,7 @@ def evaluate_fly(
     }
     if json_out:
         json_out.parent.mkdir(parents=True, exist_ok=True)
-        json_out.write_text(json.dumps(payload, indent=2) + "\n")
+        json_out.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n")
     return rows, payload
 
 

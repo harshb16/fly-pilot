@@ -572,7 +572,7 @@ def train_decoder(
     output = Path(output)
     artifact.save(output)
     split_path = output.with_name("split.json")
-    split_path.write_text(json.dumps(split, indent=2) + "\n")
+    split_path.write_text(json.dumps(split, indent=2, allow_nan=False) + "\n")
     report = {
         "checkpoint": str(output),
         "parameter_count": model.parameter_count(),
@@ -592,7 +592,9 @@ def train_decoder(
         "training": "episode_tbptt",
         "target_shift_steps": target_shift,
     }
-    output.with_name("train_report.json").write_text(json.dumps(report, indent=2) + "\n")
+    output.with_name("train_report.json").write_text(
+        json.dumps(report, indent=2, allow_nan=False) + "\n"
+    )
     return report
 
 

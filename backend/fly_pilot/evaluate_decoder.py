@@ -25,8 +25,8 @@ except ImportError:  # pragma: no cover
     plt = None
 
 
-def _metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, dict[str, float]]:
-    out: dict[str, dict[str, float]] = {}
+def _metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, dict[str, float | None]]:
+    out: dict[str, dict[str, float | None]] = {}
     for i, name in enumerate(CONTROL_NAMES):
         t = y_true[:, i]
         p = y_pred[:, i]
@@ -34,7 +34,7 @@ def _metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, dict[str, floa
         mae = float(np.mean(np.abs(err)))
         rmse = float(np.sqrt(np.mean(err**2)))
         denom = float(np.sum((t - t.mean()) ** 2))
-        r2 = float("nan") if denom < 1e-12 else float(1.0 - np.sum(err**2) / denom)
+        r2 = None if denom < 1e-12 else float(1.0 - np.sum(err**2) / denom)
         t64 = t.astype(np.float64, copy=False)
         p64 = p.astype(np.float64, copy=False)
         tc = t64 - t64.mean()
@@ -43,7 +43,7 @@ def _metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, dict[str, floa
         if t.size > 2 and corr_denom > 1e-12:
             pearson = float(np.dot(tc, pc) / corr_denom)
         else:
-            pearson = float("nan")
+            pearson = None
         out[name] = {"mae": mae, "rmse": rmse, "r2": r2, "pearson": pearson}
     return out
 
@@ -172,15 +172,24 @@ def evaluate_splits(
     }
 
 
-def _gru_beats_ridge(gru: dict[str, dict[str, float]], ridge: dict[str, dict[str, float]]) -> dict[str, Any]:
+def _gru_beats_ridge(
+    gru: dict[str, dict[str, float | None]],
+    ridge: dict[str, dict[str, float | None]],
+) -> dict[str, Any]:
     better = {}
     for name in CONTROL_NAMES:
         g, r = gru[name], ridge[name]
+        g_mae, r_mae = g["mae"], r["mae"]
+        g_pearson, r_pearson = g["pearson"], r["pearson"]
         better[name] = {
-            "mae_lower": g["mae"] < r["mae"],
-            "pearson_higher": (g["pearson"] > r["pearson"])
-            if np.isfinite(g["pearson"]) and np.isfinite(r["pearson"])
-            else False,
+            "mae_lower": bool(g_mae is not None and r_mae is not None and g_mae < r_mae),
+            "pearson_higher": bool(
+                g_pearson is not None
+                and r_pearson is not None
+                and np.isfinite(g_pearson)
+                and np.isfinite(r_pearson)
+                and g_pearson > r_pearson
+            ),
         }
     n_mae = sum(1 for name in CONTROL_NAMES if better[name]["mae_lower"])
     return {"per_control": better, "mae_wins": n_mae, "material": n_mae >= 2}
@@ -229,7 +238,7 @@ def evaluate_checkpoint(
         **metrics,
     }
     out = Path(checkpoint).with_name("offline_eval.json")
-    out.write_text(json.dumps(payload, indent=2) + "\n")
+    out.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n")
     return payload
 
 

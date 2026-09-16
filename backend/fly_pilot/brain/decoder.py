@@ -255,7 +255,7 @@ class DecoderArtifact:
             "std_preview": meta["scaler"]["std"][:8],
             "n": int(self.config.input_dim),
         }
-        sidecar.write_text(json.dumps(meta, indent=2) + "\n")
+        sidecar.write_text(json.dumps(meta, indent=2, allow_nan=False) + "\n")
         return path
 
     @classmethod
