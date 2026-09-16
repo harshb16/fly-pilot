@@ -30,9 +30,6 @@ from fly_pilot.controllers.base import Controller
 from fly_pilot.state import AircraftControls, AircraftObservation
 
 # Small first-order low-pass on decoder outputs, applied in neural time
-# (~50 Hz). Alpha 0.55 keeps the command responsive while damping single-step
-# GRU chatter. This is an actuator convenience, not a runway-guidance law.
-# Small first-order low-pass on decoder outputs, applied in neural time
 # (~50 Hz). Alpha 0.70 keeps opening corrections (the expert's first 20 s)
 # while damping single-step GRU chatter. Not a runway-guidance law.
 SLEW_ALPHA = 0.70

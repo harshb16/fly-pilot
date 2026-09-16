@@ -27,9 +27,13 @@ fly-pilot-eval = "fly_pilot.evaluate:main"
 fly-pilot-record = "fly_pilot.record_expert:main"
 fly-pilot-record-observing = "fly_pilot.record_observing:main"
 fly-pilot-record-decoder = "fly_pilot.record_decoder:main"
+fly-pilot-record-dagger = "fly_pilot.record_dagger:main"
 fly-pilot-train-decoder = "fly_pilot.train_decoder:main"
 fly-pilot-eval-decoder = "fly_pilot.evaluate_decoder:main"
 fly-pilot-eval-fly = "fly_pilot.evaluate_fly:main"
+fly-pilot-verify-artifact = "fly_pilot.verify_artifact:main"
+fly-pilot-diagnose-decoder = "fly_pilot.diagnose_decoder:main"
+fly-pilot-select-decoder = "fly_pilot.select_decoder:main"
 
 [tool.setuptools.packages.find]
 include = ["fly_pilot*"]

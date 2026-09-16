@@ -7,6 +7,12 @@ export type EpisodeStatus =
 
 export type ControllerName = "manual" | "expert" | "expert_observing" | "fly_control";
 
+export interface ModeCapability {
+  available: boolean;
+  reason: string | null;
+  action: string | null;
+}
+
 export interface RunwayInfo {
   name: string;
   lat_deg: number;
@@ -48,6 +54,14 @@ export interface HelloMessage {
     neural_hz: number;
     state_broadcast_hz: number;
   };
+  capabilities?: Partial<Record<ControllerName, ModeCapability>>;
+}
+
+export interface ErrorMessage {
+  type: "error";
+  code: string;
+  message: string;
+  action: string | null;
 }
 
 export interface ExpertTelemetry {
@@ -171,7 +185,7 @@ export interface StateMessage {
   fly_control?: FlyControlTelemetry;
 }
 
-export type ServerMessage = HelloMessage | StateMessage;
+export type ServerMessage = HelloMessage | StateMessage | ErrorMessage;
 
 export interface PilotControls {
   aileron: number;

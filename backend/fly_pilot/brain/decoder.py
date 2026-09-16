@@ -11,6 +11,7 @@ telemetry must never be concatenated into the feature vector.
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -174,7 +175,11 @@ class DecoderArtifact:
     model: CausalTemporalDecoder
     dn_body_ids: np.ndarray
     git_commit: str = ""
+    git_dirty: bool = False
     training_seed: int = 0
+    training_command: list[str] = field(default_factory=list)
+    dependencies: dict[str, str] = field(default_factory=dict)
+    seed_ranges: dict[str, Any] = field(default_factory=dict)
     dataset: dict[str, Any] = field(default_factory=dict)
     metrics: dict[str, Any] = field(default_factory=dict)
     target_conventions: dict[str, Any] = field(default_factory=lambda: dict(TARGET_CONVENTIONS))
@@ -190,7 +195,7 @@ class DecoderArtifact:
                 "Refusing to decode with a misaligned MaleCNS population."
             )
 
-    def metadata(self) -> dict[str, Any]:
+    def metadata(self, *, checkpoint_sha256: str | None = None) -> dict[str, Any]:
         mean = self.model.mean.detach().cpu().numpy()
         std = self.model.std.detach().cpu().numpy()
         return {
@@ -210,8 +215,13 @@ class DecoderArtifact:
             "target_conventions": self.target_conventions,
             "dataset": self.dataset,
             "git_commit": self.git_commit,
+            "git_dirty": self.git_dirty,
             "training_seed": self.training_seed,
+            "training_command": self.training_command,
+            "dependencies": self.dependencies,
+            "seed_ranges": self.seed_ranges,
             "metrics": self.metrics,
+            "checkpoint_sha256": checkpoint_sha256,
         }
 
     def save(self, path: Path) -> Path:
@@ -224,15 +234,20 @@ class DecoderArtifact:
             "state_dict": self.model.state_dict(),
             "dn_body_ids": np.asarray(self.dn_body_ids, dtype=np.int64),
             "git_commit": self.git_commit,
+            "git_dirty": self.git_dirty,
             "training_seed": int(self.training_seed),
+            "training_command": list(self.training_command),
+            "dependencies": dict(self.dependencies),
+            "seed_ranges": dict(self.seed_ranges),
             "dataset": self.dataset,
             "metrics": self.metrics,
             "target_conventions": self.target_conventions,
             "input_kind": DECODER_INPUT_KIND,
         }
         torch.save(payload, path)
+        checkpoint_sha256 = sha256_path(path)
         sidecar = path.with_suffix(".meta.json")
-        meta = self.metadata()
+        meta = self.metadata(checkpoint_sha256=checkpoint_sha256)
         # Body ids and scaler live in the .pt file; keep the JSON inspectable.
         meta["dn_body_ids"] = meta["dn_body_ids"][:12] + ["..."] if len(meta["dn_body_ids"]) > 12 else meta["dn_body_ids"]
         meta["scaler"] = {
@@ -246,6 +261,11 @@ class DecoderArtifact:
     @classmethod
     def load(cls, path: Path, map_location: str = "cpu") -> "DecoderArtifact":
         path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(
+                f"decoder checkpoint not found: {path}. Restore the committed "
+                "artifact or set FLYPILOT_DECODER_PATH."
+            )
         payload = torch.load(path, map_location=map_location, weights_only=False)
         config = DecoderConfig.from_dict(payload["config"])
         model = CausalTemporalDecoder(config)
@@ -256,12 +276,24 @@ class DecoderArtifact:
             model=model,
             dn_body_ids=np.asarray(payload["dn_body_ids"], dtype=np.int64),
             git_commit=str(payload.get("git_commit", "")),
+            git_dirty=bool(payload.get("git_dirty", False)),
             training_seed=int(payload.get("training_seed", 0)),
+            training_command=list(payload.get("training_command") or []),
+            dependencies=dict(payload.get("dependencies") or {}),
+            seed_ranges=dict(payload.get("seed_ranges") or {}),
             dataset=dict(payload.get("dataset") or {}),
             metrics=dict(payload.get("metrics") or {}),
             target_conventions=dict(payload.get("target_conventions") or TARGET_CONVENTIONS),
             kind=str(payload.get("kind", DECODER_KIND)),
         )
+
+
+def sha256_path(path: Path, chunk_size: int = 1 << 20) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        while block := handle.read(chunk_size):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def default_checkpoint_path() -> Path:

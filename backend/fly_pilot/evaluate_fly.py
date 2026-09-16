@@ -112,29 +112,40 @@ def evaluate_fly(
     video_dir: Path | None = None,
     observer: ObservingMaleCNS | None = None,
     first_seed: int = 1500,
+    include_first_attempt: bool = True,
+    write_videos: bool = True,
 ) -> tuple[list[EpisodeMetrics], dict[str, Any]]:
     sandbox = make_fly_sandbox(checkpoint, observer)
     if sandbox.controller.name != "fly_control":
         raise RuntimeError("expected fly_control authority")
     video_dir = Path(video_dir or Path("artifacts/decoder/videos"))
-    video_dir.mkdir(parents=True, exist_ok=True)
+    if write_videos:
+        video_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"fly-eval first attempt seed={first_seed} (held-out, training distribution)", flush=True)
-    first = run_fly_episode(sandbox, seed=first_seed, episode_id=-1, record=True)
-    first_video = video_dir / "first_autonomous_attempt.gif"
-    if first.frames:
-        write_approach_video(first.frames, first_video, title="First FLY CONTROL attempt")
-    print(
-        f"fly-eval first {first.metrics.outcome} xtk={first.metrics.centerline_error_m:.1f}m "
-        f"hdg={first.metrics.heading_error_deg:.1f}deg",
-        flush=True,
-    )
+    first: FlyEpisodeResult | None = None
+    first_video: Path | None = None
+    if include_first_attempt:
+        print(f"fly-eval first attempt seed={first_seed} (held-out, training distribution)", flush=True)
+        first = run_fly_episode(
+            sandbox,
+            seed=first_seed,
+            episode_id=-1,
+            record=write_videos,
+        )
+        if write_videos and first.frames:
+            first_video = video_dir / "first_autonomous_attempt.gif"
+            write_approach_video(first.frames, first_video, title="First FLY CONTROL attempt")
+        print(
+            f"fly-eval first {first.metrics.outcome} xtk={first.metrics.centerline_error_m:.1f}m "
+            f"hdg={first.metrics.heading_error_deg:.1f}deg",
+            flush=True,
+        )
 
     rows: list[EpisodeMetrics] = []
     best: tuple[float, FlyEpisodeResult] | None = None
     closest: tuple[float, FlyEpisodeResult] | None = None
     for i in range(episodes):
-        result = run_fly_episode(sandbox, seed=seed + i, episode_id=i, record=True)
+        result = run_fly_episode(sandbox, seed=seed + i, episode_id=i, record=write_videos)
         rows.append(result.metrics)
         print(
             f"fly-eval {i+1}/{episodes} seed={seed+i} {result.metrics.outcome} "
@@ -159,17 +170,17 @@ def evaluate_fly(
     }
     showcase = best[1] if best is not None else (closest[1] if closest is not None else None)
     best_video = None
-    if showcase is not None and showcase.frames:
+    if write_videos and showcase is not None and showcase.frames:
         name = "best_successful_attempt.gif" if best is not None else "closest_attempt.gif"
         best_video = video_dir / name
         title = "Best FLY CONTROL landing" if best is not None else "Closest FLY CONTROL attempt"
         write_approach_video(showcase.frames, best_video, title=title)
     payload = {
-        "first_attempt": asdict(first.metrics),
+        "first_attempt": None if first is None else asdict(first.metrics),
         "summary": summary,
         "episodes": [asdict(r) for r in rows],
         "videos": {
-            "first": str(first_video) if first.frames else None,
+            "first": str(first_video) if first_video else None,
             "best": str(best_video) if best_video else None,
         },
         "best": None if best is None else asdict(best[1].metrics),

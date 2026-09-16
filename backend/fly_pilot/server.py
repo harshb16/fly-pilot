@@ -13,6 +13,7 @@ from websockets.asyncio.server import ServerConnection, serve
 from fly_pilot.brain.data import DataError
 from fly_pilot.protocol import (
     controls_from_message,
+    error_payload,
     hello_payload,
     parse_client_message,
     state_payload,
@@ -38,12 +39,15 @@ class SimServer:
             # Opening the UI always starts on short final, even if the
             # process has been alive for a while with nobody connected.
             self.sandbox.reset()
+            self.sandbox.paused = True
         LOGGER.info("client connected (%s)", len(self.clients))
         try:
             await websocket.send(json.dumps(hello_payload(self.sandbox)))
             await websocket.send(json.dumps(state_payload(self.sandbox.snapshot())))
             async for raw in websocket:
-                self._handle_message(raw)
+                response = self._handle_message(raw)
+                if response is not None:
+                    await websocket.send(json.dumps(response))
         except Exception:
             LOGGER.exception("client handler failed")
         finally:
@@ -52,12 +56,12 @@ class SimServer:
                 self.sandbox.paused = True
             LOGGER.info("client disconnected (%s)", len(self.clients))
 
-    def _handle_message(self, raw: str | bytes) -> None:
+    def _handle_message(self, raw: str | bytes) -> dict[str, Any] | None:
         try:
             data = parse_client_message(raw)
         except (ValueError, json.JSONDecodeError) as exc:
             LOGGER.warning("bad client message: %s", exc)
-            return
+            return error_payload("invalid_message", str(exc), "Reload the page and try again.")
         kind = data["type"]
         if kind == "controls":
             self.sandbox.set_manual_controls(controls_from_message(data))
@@ -73,12 +77,34 @@ class SimServer:
             name = str(data.get("name", "manual"))
             try:
                 self.sandbox.set_controller(name)
-            except (ValueError, DataError) as exc:
+            except (ValueError, DataError, FileNotFoundError, RuntimeError) as exc:
                 LOGGER.warning("%s", exc)
-                return
+                capabilities = self.sandbox.mode_capabilities()
+                key = name.strip().lower().replace("-", "_").replace(" ", "_")
+                capability = capabilities.get(key, {})
+                detail = f"{capability.get('reason') or ''} {exc}".lower()
+                if "checkpoint" in detail:
+                    code = "decoder_checkpoint_missing"
+                elif "malecns" in detail or isinstance(exc, DataError):
+                    code = "malecns_not_prepared"
+                elif isinstance(exc, ValueError):
+                    code = "invalid_mode"
+                else:
+                    code = "mode_load_failed"
+                return error_payload(
+                    code,
+                    str(capability.get("reason") or exc),
+                    capability.get("action"),
+                )
             self._push_hello = True
         else:
-            LOGGER.debug("ignored client message type %s", kind)
+            LOGGER.warning("unsupported client message type %s", kind)
+            return error_payload(
+                "unsupported_message",
+                f"Unsupported message type: {kind}",
+                "Reload the page if the frontend and backend are out of sync.",
+            )
+        return None
 
     async def broadcast(self, payload: dict[str, Any]) -> None:
         if not self.clients:

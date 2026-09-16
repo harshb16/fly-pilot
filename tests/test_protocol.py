@@ -1,6 +1,6 @@
 import json
 
-from fly_pilot.protocol import controls_from_message, hello_payload, parse_client_message, state_payload
+from fly_pilot.protocol import controls_from_message, error_payload, hello_payload, parse_client_message, state_payload
 from fly_pilot.runway import Runway
 from fly_pilot.sandbox import SandboxSnapshot
 from fly_pilot.state import AircraftControls, AircraftObservation, EpisodeInfo, EpisodeStatus
@@ -74,6 +74,34 @@ def test_hello_payload_states_no_malecns() -> None:
     assert payload["physics"] == "jsbsim"
     assert payload["milestone"] == 5
     assert payload["integrity"]["fly_controls_aircraft"] is False
+    assert payload["capabilities"] == {}
+
+
+def test_hello_capabilities_and_structured_error() -> None:
+    class _Fake:
+        runway = Runway()
+        approach = type("A", (), {"distance_m": 3200, "agl_m": 250, "airspeed_kts": 70, "flight_path_deg": -4.5})()
+        controller = type("C", (), {"name": "manual"})()
+
+        @staticmethod
+        def mode_capabilities():
+            return {
+                "fly_control": {
+                    "available": False,
+                    "reason": "checkpoint missing",
+                    "action": "restore it",
+                }
+            }
+
+    hello = hello_payload(_Fake())  # type: ignore[arg-type]
+    assert hello["capabilities"]["fly_control"]["available"] is False
+    error = error_payload("mode_unavailable", "checkpoint missing", "restore it")
+    assert error == {
+        "type": "error",
+        "code": "mode_unavailable",
+        "message": "checkpoint missing",
+        "action": "restore it",
+    }
 
 
 def test_state_payload_includes_expert_debug_when_present() -> None:

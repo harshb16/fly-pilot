@@ -6,7 +6,9 @@ Uses a tiny synthetic graph. Full MaleCNS is not required.
 from __future__ import annotations
 
 import inspect
+import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -22,12 +24,15 @@ from fly_pilot.brain.features import DECODER_INPUT_KIND as FEATURE_INPUT_KIND
 from fly_pilot.brain.vision.scene import empty_atlas
 from fly_pilot.controllers.expert import ExpertLandingController
 from fly_pilot.controllers.trained import TrainedMaleCNSController
+from fly_pilot.diagnose_decoder import dataset_diagnostics
 from fly_pilot.disturbance import ControlDisturbance
 from fly_pilot.record_decoder import DECODER_FORBIDDEN_INPUTS, DECODER_INPUT_COLUMNS, record_decoder_episodes
+from fly_pilot.record_dagger import record_dagger_episodes
 from fly_pilot.record_observing import synthetic_observer
 from fly_pilot.sandbox import LandingSandbox
 from fly_pilot.state import AircraftControls
-from fly_pilot.train_decoder import load_compact_table, split_episode_ids
+from fly_pilot.train_decoder import load_compact_table, load_compact_tables, split_episode_ids
+from fly_pilot.verify_artifact import verify_decoder_artifact
 
 
 def test_decoder_input_kind_is_dn_rates_only() -> None:
@@ -282,3 +287,121 @@ def test_train_tiny_decoder_on_synthetic_episodes(tmp_path: Path) -> None:
         x = np.zeros(loaded.config.input_dim, dtype=np.float32)
     a = loaded.model.step_numpy(x)
     assert a.shape == (4,)
+
+
+def test_multiple_compact_datasets_remap_complete_episodes(tmp_path: Path) -> None:
+    first = tmp_path / "first.parquet"
+    second = tmp_path / "second.parquet"
+    record_decoder_episodes(first, successes=1, seed=40, synthetic=True, max_steps=80)
+    record_decoder_episodes(second, successes=1, seed=41, synthetic=True, max_steps=80)
+    bundle = load_compact_tables([first, second])
+    assert sorted(bundle["episodes"]) == [0, 1]
+    assert bundle["episode_sources"][0]["source_episode_id"] == 0
+    assert bundle["episode_sources"][1]["source_episode_id"] == 0
+    assert bundle["episode_sources"][0]["path"] != bundle["episode_sources"][1]["path"]
+    split = split_episode_ids(sorted(bundle["episodes"]), train=1, val=1, test=1, seed=0)
+    assert set(split["train"]).isdisjoint(split["test"])
+    diagnostics = dataset_diagnostics([first, second])
+    assert set(diagnostics["temporal_phase_features"]) == {"opening", "middle", "terminal"}
+    assert diagnostics["features"]["count"] == bundle["dn_n"] * 2
+
+
+def test_dagger_uses_fly_authority_and_shadow_labels_only(tmp_path: Path) -> None:
+    observer = synthetic_observer(seed=51)
+    controller = TrainedMaleCNSController.untrained(observer, seed=51)
+    output = tmp_path / "dagger.parquet"
+    report = record_dagger_episodes(
+        output,
+        episodes=1,
+        seed=51,
+        checkpoint=tmp_path / "not-needed.pt",
+        observer=observer,
+        controller=controller,
+        max_steps=100,
+    )
+    assert report["control_authority"] == "fly_control"
+    assert report["expert_controls_aircraft"] is False
+    assert report["commands_blended"] is False
+    assert report["rows"] > 0
+    import pyarrow.parquet as pq
+
+    columns = set(pq.read_schema(output).names)
+    assert set(DECODER_INPUT_COLUMNS).issubset(columns)
+    assert not (set(DECODER_FORBIDDEN_INPUTS) & columns)
+
+
+def test_artifact_metadata_hash_and_smoke_verification(tmp_path: Path) -> None:
+    observer = synthetic_observer(seed=60)
+    controller = TrainedMaleCNSController.untrained(observer, seed=60)
+    controller.artifact.git_commit = "abc123"
+    controller.artifact.git_dirty = True
+    controller.artifact.training_command = ["python", "-m", "fly_pilot.train_decoder"]
+    controller.artifact.dependencies = {"python": "test"}
+    controller.artifact.seed_ranges = {"test": {"start": 4000, "episodes": 100}}
+    checkpoint = tmp_path / "best.pt"
+    controller.artifact.save(checkpoint)
+    report = verify_decoder_artifact(checkpoint, check_prepared=False)
+    assert report["ok"] is True
+    assert report["training_data_required"] is False
+    assert report["dn_order_check"] == "embedded-structural"
+
+    checkpoint.write_bytes(checkpoint.read_bytes() + b"tampered")
+    with pytest.raises(ValueError, match="SHA-256 mismatch"):
+        verify_decoder_artifact(checkpoint, check_prepared=False)
+
+
+def test_failed_fly_switch_preserves_current_controller(tmp_path: Path) -> None:
+    observer = synthetic_observer(seed=70)
+    sandbox = LandingSandbox(observer=observer, decoder_path=tmp_path / "missing.pt")
+    original = sandbox.controller
+    with pytest.raises(FileNotFoundError, match="checkpoint"):
+        sandbox.set_controller("fly_control")
+    assert sandbox.controller is original
+    assert sandbox.mode == "manual"
+
+
+def test_fixed_matrix_ranks_success_then_progress_then_offline_mae(monkeypatch, tmp_path: Path) -> None:
+    import fly_pilot.select_decoder as selection
+
+    mae = {
+        "expert-full": 0.01,
+        "expert-small": 0.02,
+        "dagger-full": 0.04,
+        "dagger-small": 0.03,
+    }
+
+    def fake_train(_data, checkpoint, **_kwargs):
+        checkpoint.parent.mkdir(parents=True, exist_ok=True)
+        checkpoint.write_bytes(b"checkpoint")
+        for name in ("best.meta.json", "train_report.json", "split.json"):
+            (checkpoint.parent / name).write_text("{}\n")
+        value = mae[checkpoint.parent.name]
+        controls = {name: {"mae": value} for name in ("aileron", "elevator", "rudder", "throttle")}
+        return {"offline": {"test": {"gru": controls}}}
+
+    def fake_evaluate(_episodes, _seed, *, checkpoint, json_out, **_kwargs):
+        name = checkpoint.parent.name
+        success = {"expert-full": 0, "expert-small": 1, "dagger-full": 2, "dagger-small": 2}[name]
+        row = SimpleNamespace(
+            centerline_error_m=10.0,
+            heading_error_deg=2.0,
+            along_m=-100.0,
+            success=False,
+        )
+        payload = {"summary": {"success_count": success, "success_rate": success / 20.0}}
+        json_out.write_text(json.dumps(payload))
+        return [row], payload
+
+    monkeypatch.setattr(selection, "train_decoder", fake_train)
+    monkeypatch.setattr(selection, "evaluate_fly", fake_evaluate)
+    final = tmp_path / "final"
+    report = selection.run_matrix(
+        tmp_path / "expert.parquet",
+        [tmp_path / "d1.parquet", tmp_path / "d2.parquet"],
+        tmp_path / "candidates",
+        final_dir=final,
+    )
+    assert report["winner"]["name"] == "dagger-small"
+    assert report["ranking"][:2] == ["dagger-small", "dagger-full"]
+    assert (final / "best.pt").read_bytes() == b"checkpoint"
+    assert (final / "model-selection.json").exists()

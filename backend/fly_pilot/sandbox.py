@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Any
 
 from fly_pilot.aircraft import Cessna172
+from fly_pilot.brain.config import default_data_dir, prepared_dir
+from fly_pilot.brain.decoder import default_checkpoint_path
 from fly_pilot.brain.observing import ObservingMaleCNS
 from fly_pilot.brain.scheduler import SimScheduler
 from fly_pilot.brain.vision.scene import FlyViewPose
@@ -100,10 +102,46 @@ class LandingSandbox:
         if observer is None:
             self.observing = False
 
-    def _ensure_observer(self) -> ObservingMaleCNS:
-        if self.observer is None:
-            self.observer = ObservingMaleCNS.load(runway=self.runway)
-        return self.observer
+    def mode_capabilities(self) -> dict[str, dict[str, Any]]:
+        """Report mode readiness without loading the 1+ GiB source dataset."""
+        prepared = prepared_dir(default_data_dir())
+        brain_ready = self.observer is not None or (
+            (prepared / "manifest.json").exists()
+            and (prepared / "weights.npz").exists()
+            and (prepared / "neurons.parquet").exists()
+        )
+        checkpoint = Path(self.decoder_path or default_checkpoint_path())
+        fly_ready = brain_ready and checkpoint.exists()
+        return {
+            "manual": {"available": True, "reason": None, "action": None},
+            "expert": {"available": True, "reason": None, "action": None},
+            "expert_observing": {
+                "available": brain_ready,
+                "reason": None if brain_ready else "MaleCNS data is not prepared.",
+                "action": None if brain_ready else "Run python -m fly_pilot.brain.prepare.",
+            },
+            "fly_control": {
+                "available": fly_ready,
+                "reason": (
+                    None
+                    if fly_ready
+                    else (
+                        "MaleCNS data is not prepared."
+                        if not brain_ready
+                        else f"Decoder checkpoint is missing at {checkpoint}."
+                    )
+                ),
+                "action": (
+                    None
+                    if fly_ready
+                    else (
+                        "Run python -m fly_pilot.brain.prepare."
+                        if not brain_ready
+                        else "Restore the committed checkpoint or set FLYPILOT_DECODER_PATH."
+                    )
+                ),
+            },
+        }
 
     def set_controller(self, name: str) -> SandboxSnapshot:
         key = name.strip().lower().replace("-", "_").replace(" ", "_")
@@ -119,33 +157,60 @@ class LandingSandbox:
             )
         if key not in ALLOWED_CONTROLLERS:
             raise ValueError(f"unknown controller {name!r}; expected {ALLOWED_CONTROLLERS}")
+        # Construct every potentially failing dependency before changing live
+        # authority. A missing dataset/checkpoint must leave the current mode
+        # usable instead of half-switching the sandbox.
+        next_observer = self.observer
+        if key in ("expert_observing", "fly_control") and next_observer is None:
+            next_observer = ObservingMaleCNS.load(runway=self.runway)
         if key == "manual":
-            self.controller = ManualController(AircraftControls(throttle=self.approach.throttle))
-            self.randomize_spawns = False
-            self.observing = False
-            self.spawn_spec = None
+            next_controller: Controller = ManualController(AircraftControls(throttle=self.approach.throttle))
+            next_randomize = False
+            next_observing = False
+            next_spawn = None
         elif key == "expert":
-            self.controller = ExpertLandingController(self.runway)
-            self.randomize_spawns = True
-            self.observing = False
-            self.spawn_spec = None
+            next_controller = ExpertLandingController(self.runway)
+            next_randomize = True
+            next_observing = False
+            next_spawn = None
         elif key == "expert_observing":
-            self.controller = ExpertLandingController(self.runway)
-            self.randomize_spawns = True
-            self._ensure_observer()
-            self.observing = True
-            self.spawn_spec = None
+            next_controller = ExpertLandingController(self.runway)
+            next_randomize = True
+            next_observing = True
+            next_spawn = None
         else:
-            observer = self._ensure_observer()
-            self.controller = TrainedMaleCNSController.load(observer, self.decoder_path)
-            self.randomize_spawns = True
-            self.observing = False
-            self.spawn_spec = DECODER_SPAWN
-        if self.controller.name not in CONTROL_AUTHORITY:
-            raise RuntimeError("control authority must remain manual, expert, or fly_control")
-        if self.mode == "fly_control" and isinstance(self.controller, ExpertLandingController):
-            raise RuntimeError("FLY CONTROL must not instantiate ExpertLandingController")
-        return self.reset()
+            assert next_observer is not None
+            next_controller = TrainedMaleCNSController.load(next_observer, self.decoder_path)
+            next_randomize = True
+            next_observing = False
+            next_spawn = DECODER_SPAWN
+        previous = (
+            self.controller,
+            self.observer,
+            self.randomize_spawns,
+            self.observing,
+            self.spawn_spec,
+        )
+        try:
+            self.controller = next_controller
+            self.observer = next_observer
+            self.randomize_spawns = next_randomize
+            self.observing = next_observing
+            self.spawn_spec = next_spawn
+            if self.controller.name not in CONTROL_AUTHORITY:
+                raise RuntimeError("control authority must remain manual, expert, or fly_control")
+            if self.mode == "fly_control" and isinstance(self.controller, ExpertLandingController):
+                raise RuntimeError("FLY CONTROL must not instantiate ExpertLandingController")
+            return self.reset()
+        except Exception:
+            (
+                self.controller,
+                self.observer,
+                self.randomize_spawns,
+                self.observing,
+                self.spawn_spec,
+            ) = previous
+            raise
 
     def reset(self, seed: int | None = None) -> SandboxSnapshot:
         self.paused = False

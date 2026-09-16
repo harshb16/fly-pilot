@@ -171,6 +171,22 @@ button {
 
 button:hover { filter: brightness(0.95); }
 
+button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+  opacity: 0.45;
+}
+
+.error {
+  top: 9rem;
+  left: 50%;
+  max-width: min(42rem, calc(100vw - 2rem));
+  color: #ffe6df;
+  background: rgba(91, 29, 20, 0.94);
+  border: 1px solid rgba(255, 155, 128, 0.6);
+  transform: translateX(-50%);
+}
+
 .help, .integrity {
   color: #9fb0c3;
   font-size: 11px;

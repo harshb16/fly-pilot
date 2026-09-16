@@ -1,4 +1,4 @@
-import type { HelloMessage, PilotControls, StateMessage } from "./protocol";
+import type { ErrorMessage, HelloMessage, PilotControls, StateMessage } from "./protocol";
 import type { CameraMode } from "./scene";
 import type { ConnectionStatus } from "./simClient";
 
@@ -37,6 +37,7 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
       <div class="readout"><span>XTK</span><strong id="xtk">—</strong><em>m</em></div>
     </div>
     <div class="panel episode" id="episode">IN PROGRESS</div>
+    <div class="panel error" id="error-panel" role="alert" hidden></div>
     <div class="panel expert" id="expert-panel" hidden>
       <div class="expert-title">Conventional autopilot — not MaleCNS</div>
       <div class="readout"><span>PHASE</span><strong id="ex-phase">—</strong></div>
@@ -135,6 +136,7 @@ export interface HudModel {
   state: StateMessage | null;
   camera: CameraMode;
   localControls: PilotControls;
+  error: ErrorMessage | null;
 }
 
 function slider(id: string, label: string, min: number, max: number, value: number): string {
@@ -165,9 +167,19 @@ function renderHud(root: HTMLElement, model: HudModel): void {
 
   const episode = root.querySelector("#episode");
   if (episode && state) {
-    const label = state.episode.status.replaceAll("_", " ").toUpperCase();
+    const label = state.paused && state.episode.status === "in_progress"
+      ? "READY — CHOOSE A MODE OR RESUME"
+      : state.episode.status.replaceAll("_", " ").toUpperCase();
     episode.textContent = state.episode.reason ? `${label} — ${state.episode.reason}` : label;
     episode.className = `panel episode ${state.episode.status}`;
+  }
+
+  const errorPanel = root.querySelector<HTMLElement>("#error-panel");
+  if (errorPanel) {
+    errorPanel.hidden = model.error === null;
+    errorPanel.textContent = model.error
+      ? `${model.error.message}${model.error.action ? ` ${model.error.action}` : ""}`
+      : "";
   }
 
   const controller = state?.controller ?? model.hello?.controller ?? "manual";
@@ -182,6 +194,7 @@ function renderHud(root: HTMLElement, model: HudModel): void {
   root.querySelector("#btn-expert")?.classList.toggle("active", controller === "expert");
   root.querySelector("#btn-observing")?.classList.toggle("active", controller === "expert_observing");
   root.querySelector("#btn-fly")?.classList.toggle("active", controller === "fly_control");
+  setModeAvailability(root, model.hello);
 
   const expertPanel = root.querySelector<HTMLElement>("#expert-panel");
   if (expertPanel) {
@@ -248,6 +261,24 @@ function renderHud(root: HTMLElement, model: HudModel): void {
   const integrity = root.querySelector("#integrity");
   if (integrity && model.hello) {
     integrity.textContent = model.hello.integrity.note;
+  }
+}
+
+function setModeAvailability(root: HTMLElement, hello: HelloMessage | null): void {
+  const pairs = [
+    ["manual", "btn-manual"],
+    ["expert", "btn-expert"],
+    ["expert_observing", "btn-observing"],
+    ["fly_control", "btn-fly"],
+  ] as const;
+  for (const [mode, id] of pairs) {
+    const button = root.querySelector<HTMLButtonElement>(`#${id}`);
+    const capability = hello?.capabilities?.[mode];
+    if (!button) continue;
+    button.disabled = capability?.available === false;
+    button.title = capability?.available === false
+      ? [capability.reason, capability.action].filter(Boolean).join(" ")
+      : "";
   }
 }
 

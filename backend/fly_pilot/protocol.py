@@ -28,6 +28,15 @@ def controls_from_message(data: dict[str, Any]) -> AircraftControls:
     ).clamped()
 
 
+def error_payload(code: str, message: str, action: str | None = None) -> dict[str, Any]:
+    return {
+        "type": "error",
+        "code": code,
+        "message": message,
+        "action": action,
+    }
+
+
 def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
     runway: Runway = sandbox.runway
     approach = sandbox.approach
@@ -96,6 +105,11 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
             "neural_hz": 50.0,
             "state_broadcast_hz": 30.0,
         },
+        "capabilities": (
+            sandbox.mode_capabilities()
+            if callable(getattr(sandbox, "mode_capabilities", None))
+            else {}
+        ),
     }
     observer = getattr(sandbox, "observer", None)
     if observer is not None and (observing or fly_controls):

@@ -87,6 +87,7 @@ function frame(now: number): void {
       state: client.state,
       camera: scene.mode,
       localControls: controls,
+      error: client.lastError,
     });
   }
   requestAnimationFrame(frame);

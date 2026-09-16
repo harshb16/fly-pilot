@@ -11,13 +11,13 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 import torch
 
 from fly_pilot.brain.decoder import CONTROL_NAMES, CausalTemporalDecoder, DecoderArtifact, DecoderConfig
-from fly_pilot.train_decoder import load_compact_table, split_episode_ids
+from fly_pilot.train_decoder import load_compact_tables, split_episode_ids
 
 try:
     import matplotlib.pyplot as plt
@@ -35,8 +35,13 @@ def _metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, dict[str, floa
         rmse = float(np.sqrt(np.mean(err**2)))
         denom = float(np.sum((t - t.mean()) ** 2))
         r2 = float("nan") if denom < 1e-12 else float(1.0 - np.sum(err**2) / denom)
-        if t.size > 2 and float(t.std()) > 1e-8 and float(p.std()) > 1e-8:
-            pearson = float(np.corrcoef(t, p)[0, 1])
+        t64 = t.astype(np.float64, copy=False)
+        p64 = p.astype(np.float64, copy=False)
+        tc = t64 - t64.mean()
+        pc = p64 - p64.mean()
+        corr_denom = float(np.sqrt(np.dot(tc, tc) * np.dot(pc, pc)))
+        if t.size > 2 and corr_denom > 1e-12:
+            pearson = float(np.dot(tc, pc) / corr_denom)
         else:
             pearson = float("nan")
         out[name] = {"mae": mae, "rmse": rmse, "r2": r2, "pearson": pearson}
@@ -165,14 +170,15 @@ def _gru_beats_ridge(gru: dict[str, dict[str, float]], ridge: dict[str, dict[str
 
 def evaluate_checkpoint(
     checkpoint: Path,
-    data: Path,
+    data: Path | Sequence[Path],
     *,
     plots_dir: Path | None = None,
     split: dict[str, list[int]] | None = None,
     seed: int = 0,
 ) -> dict[str, Any]:
     artifact = DecoderArtifact.load(checkpoint)
-    bundle = load_compact_table(data)
+    data_paths = [Path(data)] if isinstance(data, (str, Path)) else [Path(path) for path in data]
+    bundle = load_compact_tables(data_paths)
     artifact.assert_dn_ordering(bundle["dn_body_ids"])
     if split is None:
         split_path = Path(checkpoint).with_name("split.json")
@@ -186,6 +192,13 @@ def evaluate_checkpoint(
                 test=5,
                 seed=seed,
             )
+    required_ids = set(split["train"]) | set(split["val"]) | set(split["test"])
+    missing_ids = sorted(required_ids - set(bundle["episodes"]))
+    if missing_ids:
+        raise ValueError(
+            "the checkpoint split does not match the supplied dataset collection; "
+            f"missing episode ids {missing_ids[:8]}. Pass every training dataset with repeated --data."
+        )
     plots_dir = plots_dir or Path(checkpoint).with_name("plots")
     metrics = evaluate_splits(artifact.model, bundle, split, plots_dir=plots_dir)
     payload = {
@@ -205,11 +218,16 @@ def evaluate_checkpoint(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", type=Path, default=Path("artifacts/decoder/best.pt"))
-    parser.add_argument("--data", type=Path, default=Path("data/decoder/expert_dn_controls.parquet"))
+    parser.add_argument("--data", type=Path, action="append", dest="data_paths")
     parser.add_argument("--plots", type=Path, default=None)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args(argv)
-    payload = evaluate_checkpoint(args.checkpoint, args.data, plots_dir=args.plots, seed=args.seed)
+    payload = evaluate_checkpoint(
+        args.checkpoint,
+        args.data_paths or [Path("data/decoder/expert_dn_controls.parquet")],
+        plots_dir=args.plots,
+        seed=args.seed,
+    )
     print(json.dumps({"test": payload["test"]["gru"], "ridge": payload["test"]["ridge"], "mean": payload["test"]["mean"], "gru_vs_ridge": payload["gru_materially_improves_on_ridge"]}, indent=2))
     return 0
 

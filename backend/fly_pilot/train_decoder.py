@@ -7,10 +7,12 @@ MaleCNS synapses are not updated.
 from __future__ import annotations
 
 import argparse
+import importlib.metadata
 import json
 import subprocess
+import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 import pyarrow.parquet as pq
@@ -23,9 +25,15 @@ from fly_pilot.brain.decoder import (
     CausalTemporalDecoder,
     DecoderArtifact,
     DecoderConfig,
+    sha256_path,
 )
 
 SCHEMA_VERSION = "decoder-training-v1"
+PORTFOLIO_SEED_RANGES = {
+    "training": {"start": 1000},
+    "validation": {"start": 3000, "episodes": 20},
+    "test": {"start": 4000, "episodes": 100},
+}
 
 
 def git_commit() -> str:
@@ -39,6 +47,29 @@ def git_commit() -> str:
         return ""
 
 
+def git_dirty() -> bool:
+    try:
+        return bool(
+            subprocess.check_output(
+                ["git", "status", "--porcelain"],
+                stderr=subprocess.DEVNULL,
+            ).decode().strip()
+        )
+    except Exception:
+        return True
+
+
+def dependency_versions() -> dict[str, str]:
+    packages = ("jsbsim", "numpy", "scipy", "websockets", "pyarrow", "torch", "matplotlib")
+    versions: dict[str, str] = {"python": sys.version.split()[0]}
+    for package in packages:
+        try:
+            versions[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            versions[package] = "missing"
+    return versions
+
+
 def decode_rates(blob: bytes, n: int) -> np.ndarray:
     arr = np.frombuffer(blob, dtype=np.float16).astype(np.float32)
     if arr.size != n:
@@ -47,6 +78,7 @@ def decode_rates(blob: bytes, n: int) -> np.ndarray:
 
 
 def load_compact_table(path: Path) -> dict[str, Any]:
+    path = Path(path)
     table = pq.read_table(path)
     cols = set(table.column_names)
     required = {
@@ -122,6 +154,58 @@ def load_compact_table(path: Path) -> dict[str, Any]:
         "path": str(path),
         "rows": table.num_rows,
         "n_episodes": len(packed),
+        "sha256": sha256_path(path),
+        "episode_sources": {
+            int(eid): {"path": str(path), "source_episode_id": int(eid)}
+            for eid in packed
+        },
+    }
+
+
+def load_compact_tables(paths: Sequence[Path]) -> dict[str, Any]:
+    normalized = [Path(path) for path in paths]
+    if not normalized:
+        raise ValueError("at least one decoder dataset is required")
+    bundles = [load_compact_table(path) for path in normalized]
+    if len(bundles) == 1:
+        one = dict(bundles[0])
+        one["datasets"] = [
+            {"path": one["path"], "sha256": one["sha256"], "rows": one["rows"]}
+        ]
+        return one
+    first = bundles[0]
+    expected_n = int(first["dn_n"])
+    expected_ids = np.asarray(first["dn_body_ids"], dtype=np.int64)
+    episodes: dict[int, dict[str, np.ndarray]] = {}
+    sources: dict[int, dict[str, Any]] = {}
+    next_id = 0
+    for bundle in bundles:
+        if int(bundle["dn_n"]) != expected_n:
+            raise ValueError("decoder datasets use different descending-neuron counts")
+        ids = np.asarray(bundle["dn_body_ids"], dtype=np.int64)
+        if expected_ids.size and ids.size and not np.array_equal(ids, expected_ids):
+            raise ValueError("decoder datasets use different DN body-id ordering")
+        for local_id in sorted(bundle["episodes"]):
+            episodes[next_id] = bundle["episodes"][local_id]
+            sources[next_id] = {
+                "path": bundle["path"],
+                "source_episode_id": int(local_id),
+            }
+            next_id += 1
+    return {
+        "episodes": episodes,
+        "dn_n": expected_n,
+        "dn_body_ids": expected_ids,
+        "meta": {"combined": True},
+        "path": [bundle["path"] for bundle in bundles],
+        "rows": int(sum(bundle["rows"] for bundle in bundles)),
+        "n_episodes": len(episodes),
+        "sha256": None,
+        "episode_sources": sources,
+        "datasets": [
+            {"path": bundle["path"], "sha256": bundle["sha256"], "rows": bundle["rows"]}
+            for bundle in bundles
+        ],
     }
 
 
@@ -131,8 +215,12 @@ def split_episode_ids(episode_ids: list[int], *, train: int, val: int, test: int
     rng.shuffle(ids)
     ids = [int(x) for x in ids.tolist()]
     n = len(ids)
-    if n < 3:
-        return {"train": ids, "val": ids[:1], "test": ids[-1:]}
+    if n == 0:
+        return {"train": [], "val": [], "test": []}
+    if n == 1:
+        return {"train": ids, "val": [], "test": []}
+    if n == 2:
+        return {"train": ids[:1], "val": [], "test": ids[1:]}
     n_test = min(test, max(1, n // 10)) if n >= 10 else min(test, 1)
     n_val = min(val, max(1, n // 10)) if n >= 10 else min(val, 1)
     n_train = n - n_val - n_test
@@ -338,7 +426,7 @@ def count_chunks(bundle: dict[str, Any], ids: list[int], chunk_len: int, target_
 
 
 def train_decoder(
-    data_path: Path,
+    data_path: Path | Sequence[Path],
     output: Path,
     *,
     seed: int = 0,
@@ -357,12 +445,15 @@ def train_decoder(
     hidden_linear: int = 256,
     dropout: float = 0.1,
     target_shift: int = 2,
+    training_command: Sequence[str] | None = None,
+    seed_ranges: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     del batch_size, stride  # windowed loader is no longer the training path
     torch.manual_seed(seed)
     np.random.seed(seed)
     rng = np.random.default_rng(seed)
-    bundle = load_compact_table(data_path)
+    data_paths = [Path(data_path)] if isinstance(data_path, (str, Path)) else [Path(p) for p in data_path]
+    bundle = load_compact_tables(data_paths)
     ids = sorted(bundle["episodes"])
     split = split_episode_ids(ids, train=train_episodes, val=val_episodes, test=test_episodes, seed=seed)
     mean, std = fit_scaler(bundle["episodes"], split["train"])
@@ -442,13 +533,19 @@ def train_decoder(
         model=model,
         dn_body_ids=bundle["dn_body_ids"],
         git_commit=git_commit(),
+        git_dirty=git_dirty(),
         training_seed=seed,
+        training_command=list(training_command or sys.argv),
+        dependencies=dependency_versions(),
+        seed_ranges=dict(seed_ranges or PORTFOLIO_SEED_RANGES),
         dataset={
-            "path": bundle["path"],
+            "paths": [str(path) for path in data_paths],
+            "files": bundle["datasets"],
             "schema": SCHEMA_VERSION,
             "rows": bundle["rows"],
             "n_episodes": bundle["n_episodes"],
             "split": split,
+            "episode_sources": {str(k): v for k, v in bundle["episode_sources"].items()},
             "sequence_length": seq_len,
             "training": "episode_tbptt",
             "target_shift_steps": target_shift,
@@ -476,6 +573,11 @@ def train_decoder(
         "best_val_loss": best_val,
         "offline": metrics,
         "git_commit": artifact.git_commit,
+        "git_dirty": artifact.git_dirty,
+        "training_command": artifact.training_command,
+        "dependencies": artifact.dependencies,
+        "seed_ranges": artifact.seed_ranges,
+        "datasets": bundle["datasets"],
         "seed": seed,
         "training": "episode_tbptt",
         "target_shift_steps": target_shift,
@@ -486,7 +588,13 @@ def train_decoder(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data", type=Path, default=Path("data/decoder/expert_dn_controls.parquet"))
+    parser.add_argument(
+        "--data",
+        dest="data_paths",
+        type=Path,
+        action="append",
+        help="Compact decoder dataset; repeat for expert and DAgger files.",
+    )
     parser.add_argument("--output", type=Path, default=Path("artifacts/decoder/best.pt"))
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--epochs", type=int, default=30)
@@ -503,7 +611,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--target-shift", type=int, default=2)
     args = parser.parse_args(argv)
     report = train_decoder(
-        args.data,
+        args.data_paths or [Path("data/decoder/expert_dn_controls.parquet")],
         args.output,
         seed=args.seed,
         epochs=args.epochs,
@@ -518,6 +626,8 @@ def main(argv: list[str] | None = None) -> int:
         hidden_linear=args.hidden_linear,
         dropout=args.dropout,
         target_shift=args.target_shift,
+        training_command=[sys.executable, "-m", "fly_pilot.train_decoder", *sys.argv[1:]],
+        seed_ranges=PORTFOLIO_SEED_RANGES,
     )
     print(json.dumps({k: report[k] for k in report if k != "offline"}, indent=2))
     print(json.dumps(report["offline"], indent=2))

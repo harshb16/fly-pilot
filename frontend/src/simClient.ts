@@ -1,4 +1,4 @@
-import type { HelloMessage, PilotControls, ServerMessage, StateMessage } from "./protocol";
+import type { ErrorMessage, HelloMessage, PilotControls, ServerMessage, StateMessage } from "./protocol";
 
 export type ConnectionStatus = "connecting" | "open" | "closed";
 
@@ -7,7 +7,7 @@ export class SimClient {
   status: ConnectionStatus = "connecting";
   hello: HelloMessage | null = null;
   state: StateMessage | null = null;
-  lastError: string | null = null;
+  lastError: ErrorMessage | null = null;
   private readonly listeners = new Set<() => void>();
   private reconnectTimer = 0;
 
@@ -35,14 +35,23 @@ export class SimClient {
       this.reconnectTimer = window.setTimeout(() => this.connect(), 1000);
     };
     ws.onerror = () => {
-      this.lastError = "WebSocket error";
+      this.lastError = {
+        type: "error",
+        code: "websocket_error",
+        message: "The simulator connection failed.",
+        action: "Check that scripts/start.sh is still running.",
+      };
+      this.emit();
     };
     ws.onmessage = (event) => {
       const message = JSON.parse(String(event.data)) as ServerMessage;
       if (message.type === "hello") {
         this.hello = message;
+        this.lastError = null;
       } else if (message.type === "state") {
         this.state = message;
+      } else if (message.type === "error") {
+        this.lastError = message;
       }
       this.emit();
     };
