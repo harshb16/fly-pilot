@@ -75,11 +75,26 @@ def ridge_predict(w: np.ndarray, x: np.ndarray) -> np.ndarray:
     return xb @ w
 
 
-def stack_split(episodes: dict[int, dict[str, np.ndarray]], ids: list[int]) -> tuple[np.ndarray, np.ndarray]:
+def stack_split(
+    episodes: dict[int, dict[str, np.ndarray]],
+    ids: list[int],
+    *,
+    max_rows: int | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     xs = [episodes[i]["x"] for i in ids if i in episodes and episodes[i]["x"].size]
     ys = [episodes[i]["y"] for i in ids if i in episodes and episodes[i]["y"].size]
     if not xs:
         return np.zeros((0, 1), np.float32), np.zeros((0, 4), np.float32)
+    total = sum(int(x.shape[0]) for x in xs)
+    if max_rows is not None and total > max_rows:
+        sampled_x: list[np.ndarray] = []
+        sampled_y: list[np.ndarray] = []
+        for x, y in zip(xs, ys, strict=True):
+            take = max(1, int(round(max_rows * x.shape[0] / total)))
+            index = np.linspace(0, x.shape[0] - 1, min(take, x.shape[0]), dtype=np.int64)
+            sampled_x.append(x[index])
+            sampled_y.append(y[index])
+        xs, ys = sampled_x, sampled_y
     return np.concatenate(xs, axis=0), np.concatenate(ys, axis=0)
 
 
@@ -91,9 +106,11 @@ def evaluate_splits(
     plots_dir: Path | None = None,
 ) -> dict[str, Any]:
     episodes = bundle["episodes"]
-    x_train, y_train = stack_split(episodes, split["train"])
+    y_chunks = [episodes[i]["y"] for i in split["train"] if i in episodes]
+    y_train = np.concatenate(y_chunks, axis=0) if y_chunks else np.zeros((0, 4), np.float32)
     mean_action = y_train.mean(axis=0) if y_train.size else np.zeros(4, np.float32)
-    ridge_w = ridge_fit(x_train, y_train) if x_train.shape[0] > x_train.shape[1] else None
+    ridge_x, ridge_y = stack_split(episodes, split["train"], max_rows=5_000)
+    ridge_w = ridge_fit(ridge_x, ridge_y) if ridge_x.shape[0] > ridge_x.shape[1] else None
 
     def _eval_ids(ids: list[int], write_plots: bool) -> dict[str, Any]:
         gru_true: list[np.ndarray] = []
@@ -150,6 +167,7 @@ def evaluate_splits(
         "test": test,
         "gru_materially_improves_on_ridge": gru_better,
         "mean_action": mean_action.tolist(),
+        "ridge_fit_rows": int(ridge_x.shape[0]),
         "plots_dir": str(plots_dir) if plots_dir else None,
     }
 

@@ -31,7 +31,7 @@ from fly_pilot.record_dagger import record_dagger_episodes
 from fly_pilot.record_observing import synthetic_observer
 from fly_pilot.sandbox import LandingSandbox
 from fly_pilot.state import AircraftControls
-from fly_pilot.train_decoder import load_compact_table, load_compact_tables, split_episode_ids
+from fly_pilot.train_decoder import fit_scaler, load_compact_table, load_compact_tables, split_episode_ids
 from fly_pilot.verify_artifact import verify_decoder_artifact
 
 
@@ -304,6 +304,18 @@ def test_multiple_compact_datasets_remap_complete_episodes(tmp_path: Path) -> No
     diagnostics = dataset_diagnostics([first, second])
     assert set(diagnostics["temporal_phase_features"]) == {"opening", "middle", "terminal"}
     assert diagnostics["features"]["count"] == bundle["dn_n"] * 2
+
+
+def test_streaming_scaler_matches_direct_statistics() -> None:
+    rng = np.random.default_rng(91)
+    episodes = {
+        i: {"x": rng.normal(size=(7 + i, 5)).astype(np.float32)}
+        for i in range(3)
+    }
+    mean, std = fit_scaler(episodes, [0, 1, 2])
+    direct = np.concatenate([episodes[i]["x"] for i in range(3)], axis=0)
+    np.testing.assert_allclose(mean, direct.mean(axis=0), atol=1e-6)
+    np.testing.assert_allclose(std, direct.std(axis=0), atol=1e-6)
 
 
 def test_dagger_uses_fly_authority_and_shadow_labels_only(tmp_path: Path) -> None:

@@ -279,9 +279,19 @@ class SequenceDataset(Dataset):
 
 def fit_scaler(episodes: dict[int, dict[str, np.ndarray]], ids: list[int]) -> tuple[np.ndarray, np.ndarray]:
     chunks = [episodes[i]["x"] for i in ids if i in episodes]
-    stacked = np.concatenate(chunks, axis=0) if chunks else np.zeros((1, 1), np.float32)
-    mean = stacked.mean(axis=0).astype(np.float32)
-    std = stacked.std(axis=0).astype(np.float32)
+    if not chunks:
+        return np.zeros(1, np.float32), np.ones(1, np.float32)
+    count = 0
+    total = np.zeros(chunks[0].shape[1], dtype=np.float64)
+    total_sq = np.zeros(chunks[0].shape[1], dtype=np.float64)
+    for chunk in chunks:
+        count += int(chunk.shape[0])
+        total += chunk.sum(axis=0, dtype=np.float64)
+        total_sq += np.square(chunk).sum(axis=0, dtype=np.float64)
+    mean64 = total / max(count, 1)
+    variance = np.maximum(total_sq / max(count, 1) - mean64 * mean64, 0.0)
+    mean = mean64.astype(np.float32)
+    std = np.sqrt(variance).astype(np.float32)
     std = np.maximum(std, 1e-6)
     return mean, std
 
