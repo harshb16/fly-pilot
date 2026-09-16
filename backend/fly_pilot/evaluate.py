@@ -120,9 +120,16 @@ def summarize(rows: list[EpisodeMetrics]) -> dict:
 
 def format_report(summary: dict, rows: list[EpisodeMetrics]) -> str:
     td = summary["successful_touchdown"]
+    ctl = summary.get("controller") or {}
+    if ctl.get("name") == "TrainedMaleCNSController":
+        heading = "FlyPilot FLY CONTROL evaluation"
+        sub = "(fixed MaleCNS + trained temporal decoder — not biological learning; expert not in the loop)"
+    else:
+        heading = "FlyPilot ExpertLandingController evaluation"
+        sub = "(conventional classical autopilot — not MaleCNS)"
     lines = [
-        "FlyPilot ExpertLandingController evaluation",
-        "(conventional classical autopilot — not MaleCNS)",
+        heading,
+        sub,
         "",
         f"episodes:           {summary['episodes']}",
         f"success rate:       {100 * summary['success_rate']:.1f}%  ({summary['success_count']}/{summary['episodes']})",

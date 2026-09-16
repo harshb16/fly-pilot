@@ -4,10 +4,10 @@ Implemented in this milestone:
 
 - ManualController — human inceptors from the browser
 - ExpertLandingController — conventional cascaded PID autoland
+- TrainedMaleCNSController — fixed MaleCNS LIF + external temporal decoder
 
 ExpertLandingController is classical flight control. It is not MaleCNS.
-MaleCNSController and TrainedMaleCNSController are not implemented yet and
-must not be stubbed.
+TrainedMaleCNSController is not biological synaptic learning.
 """
 
 from __future__ import annotations

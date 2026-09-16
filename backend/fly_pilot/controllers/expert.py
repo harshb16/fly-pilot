@@ -5,11 +5,10 @@ JSBSim Cessna 172P. It exists only as:
 
 1. a solvability baseline for the landing environment,
 2. an expert-demonstration generator for a later decoder,
-3. a comparison benchmark for the eventual MaleCNS controller.
+3. a comparison benchmark for TrainedMaleCNSController.
 
 It is NOT MaleCNS, NOT a fly brain, and MUST NOT be presented as biological
-computation. Later MaleCNSController / TrainedMaleCNSController classes are
-intentionally absent from this milestone.
+computation. It must never be blended into FLY CONTROL.
 """
 
 from __future__ import annotations

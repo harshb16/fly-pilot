@@ -1,8 +1,9 @@
-"""Descending-neuron and visual-pathway spike-rate features.
+"""Identifies candidate motor-side readouts from MaleCNS annotations.
 
-Identifies candidate motor-side readouts from MaleCNS annotations. This
-milestone records features only. It does **not** map neurons onto aileron /
-elevator / rudder / throttle.
+Default decoder input is concatenated 100 ms and 260 ms per-neuron
+descending-neuron spike rates. Aircraft telemetry is never part of this
+vector. Learning, if any, lives in an external decoder — not in MaleCNS
+synapses.
 """
 
 from __future__ import annotations
@@ -99,12 +100,19 @@ def visual_debug_populations(connectome: Connectome) -> dict[str, PopulationSpec
     return out
 
 
+DECODER_INPUT_KIND = "dn_windowed_rates"
+DECODER_INPUT_FIELDS = ("rates_w5", "rates_w13")
+
+
 class DescendingNeuronFeatureExtractor:
     """Rolling spike-rate features over configurable windows.
 
     Default windows: 5 steps (100 ms) and 13 steps (260 ms) at dt = 20 ms.
-    Left/right rates are retained from annotations. Per-neuron rates use the
-    longest window and are the candidate decoder vector for a later milestone.
+    Left/right rates are retained from annotations.
+
+    Decoder input is the concatenation of per-neuron rates over every
+    configured window (≈ 1,314 × 2 = 2,628 features). Aircraft telemetry is
+    never included.
     """
 
     def __init__(
@@ -123,6 +131,10 @@ class DescendingNeuronFeatureExtractor:
         self._buffer: deque[np.ndarray] = deque(maxlen=self.max_window)
         self.last_rates: dict[int, np.ndarray] = {}
 
+    @property
+    def available_samples(self) -> int:
+        return len(self._buffer)
+
     def reset(self) -> None:
         self._buffer.clear()
         self.last_rates = {}
@@ -136,16 +148,19 @@ class DescendingNeuronFeatureExtractor:
         spikes = fired[self.spec.indices].astype(np.uint8, copy=False)
         self._buffer.append(spikes.copy())
         stacked = np.stack(tuple(self._buffer), axis=0)
+        available = int(stacked.shape[0])
         features: dict[str, float | np.ndarray | int] = {
             "n_descending": self.spec.n,
             "spikes_this_step": int(spikes.sum()),
+            "available_samples": available,
         }
         left = self.spec.sides == "L"
         right = self.spec.sides == "R"
         for window in self.windows:
-            recent = stacked[-window:]
+            n = min(window, available)
+            recent = stacked[-n:]
             counts = recent.sum(axis=0)
-            duration = window * self.dt
+            duration = max(n, 1) * self.dt
             rates = counts.astype(np.float32) / duration
             self.last_rates[window] = rates
             features[f"mean_hz_w{window}"] = float(rates.mean())
@@ -157,11 +172,31 @@ class DescendingNeuronFeatureExtractor:
         return features
 
     def feature_vector(self) -> np.ndarray:
-        """Per-neuron rate over the longest window (candidate decoder input)."""
+        """Per-neuron rate over the longest window (HUD / diagnostics)."""
         rates = self.last_rates.get(self.max_window)
         if rates is None:
             return np.zeros(self.spec.n, dtype=np.float32)
         return rates
+
+    def decoder_feature_vector(self) -> np.ndarray:
+        """Concatenate per-neuron rates for every window.
+
+        Default: 100 ms then 260 ms. Contains only MaleCNS-derived DN rates.
+        """
+        parts: list[np.ndarray] = []
+        for window in self.windows:
+            rates = self.last_rates.get(window)
+            if rates is None:
+                parts.append(np.zeros(self.spec.n, dtype=np.float32))
+            else:
+                parts.append(np.asarray(rates, dtype=np.float32))
+        if not parts:
+            return np.zeros(0, dtype=np.float32)
+        return np.concatenate(parts, axis=0)
+
+    @property
+    def decoder_input_dim(self) -> int:
+        return int(self.spec.n * len(self.windows))
 
     def compact_summary(self) -> dict[str, float | int]:
         vec = self.feature_vector()

@@ -56,6 +56,21 @@ def nominal_spawn(runway: Runway, approach: ApproachConfig) -> SpawnState:
     )
 
 
+# Wider than the Milestone 2 solvability envelope, still inside states the
+# conventional expert can recover from. Used for decoder-training collection
+# and held-out autonomous fly-control evaluation. No wind.
+DECODER_SPAWN = SpawnRandomization(
+    distance_m=(-250.0, 250.0),
+    right_m=(-140.0, 140.0),
+    agl_m=(-50.0, 50.0),
+    airspeed_kts=(-8.0, 8.0),
+    heading_error_deg=(-12.0, 12.0),
+    gamma_deg=(-1.5, 1.5),
+    alpha_deg=(-2.0, 2.0),
+    roll_deg=(-14.0, 14.0),
+)
+
+
 def sample_spawn(
     runway: Runway,
     approach: ApproachConfig | None = None,

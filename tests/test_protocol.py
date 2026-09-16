@@ -72,7 +72,7 @@ def test_hello_payload_states_no_malecns() -> None:
     assert payload["male_cns"] is False if "male_cns" in payload else payload["integrity"]["male_cns"] is False
     assert payload["integrity"]["expert_is_biological"] is False
     assert payload["physics"] == "jsbsim"
-    assert payload["milestone"] == 4
+    assert payload["milestone"] == 5
     assert payload["integrity"]["fly_controls_aircraft"] is False
 
 
@@ -123,3 +123,74 @@ def test_state_payload_includes_expert_debug_when_present() -> None:
     assert payload["expert"]["male_cns"] is False
     assert payload["spawn_seed"] == 3
     assert "surfaces" in payload
+
+
+def test_hello_and_state_fly_control_integrity() -> None:
+    class _Fake:
+        runway = Runway()
+        approach = type("A", (), {"distance_m": 3200, "agl_m": 250, "airspeed_kts": 70, "flight_path_deg": -4.5})()
+        controller = type("C", (), {"name": "fly_control"})()
+        mode = "fly_control"
+        observing = False
+        observer = None
+
+    hello = hello_payload(_Fake())  # type: ignore[arg-type]
+    assert hello["controller"] == "fly_control"
+    assert hello["integrity"]["fly_controls_aircraft"] is True
+    assert hello["integrity"]["biological_learning"] is False
+    assert hello["integrity"]["decoder_input"] == "dn_windowed_rates"
+    assert "not biological" in hello["integrity"]["note"].lower() or "not biological synaptic" in hello["integrity"]["note"].lower()
+    assert "ExpertLandingController is not in the loop" in hello["integrity"]["note"]
+
+    obs = AircraftObservation(
+        sim_time_s=1.0,
+        lat_deg=37.0,
+        lon_deg=-122.0,
+        alt_msl_m=200.0,
+        alt_agl_m=200.0,
+        east_m=-2000.0,
+        north_m=0.0,
+        up_m=200.0,
+        along_m=-2000.0,
+        right_m=4.0,
+        airspeed_kts=70.0,
+        groundspeed_kts=69.0,
+        vertical_speed_fpm=-400.0,
+        pitch_deg=-1.0,
+        roll_deg=0.0,
+        heading_deg=90.0,
+        alpha_deg=4.0,
+        aileron=0.1,
+        elevator=0.2,
+        rudder=0.0,
+        throttle=0.4,
+        on_ground=False,
+    )
+    payload = state_payload(
+        SandboxSnapshot(
+            obs,
+            EpisodeInfo(),
+            "fly_control",
+            False,
+            debug={
+                "kind": "fixed_malecns_plus_trained_temporal_decoder",
+                "label": "FLY CONTROL",
+                "male_cns": True,
+                "biological_learning": False,
+                "expert_in_loop": False,
+                "aileron": 0.1,
+                "elevator": 0.2,
+                "rudder": 0.0,
+                "throttle": 0.4,
+                "gru_hidden_norm": 1.2,
+                "gru_hidden_mean": 0.0,
+                "decoded_neural_step": 3,
+                "slew_alpha": 0.7,
+            },
+            mode="fly_control",
+        )
+    )
+    assert payload["controller"] == "fly_control"
+    assert payload["fly_control"]["expert_in_loop"] is False
+    assert payload["fly_control"]["biological_learning"] is False
+    assert "expert" not in payload

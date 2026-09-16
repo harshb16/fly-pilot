@@ -21,8 +21,10 @@ Milestone 2 adds `ExpertLandingController`, a **conventional classical autopilot
 used as a solvability baseline and expert-data generator.
 Milestone 3 adds a **standalone** MaleCNS-derived LIF simulator.
 Milestone 4 adds **visual observation**: a fly-view renderer and R1–R6 encoder
-drive MaleCNS while the expert still flies. There is still **no** aircraft
-decoder and MaleCNS still does **not** write inceptors. See `docs/vision.md`.
+drive MaleCNS while the expert still flies.
+Milestone 5 adds **FLY CONTROL**: a trained causal GRU reads descending-neuron
+rates and writes JSBSim inceptors. MaleCNS synapses stay frozen. See
+`docs/decoder.md`.
 
 ## Runtime processes
 
@@ -30,11 +32,11 @@ decoder and MaleCNS still does **not** write inceptors. See `docs/vision.md`.
    - Owns one `LandingSandbox`.
    - Steps JSBSim in wall-clock time (FDM dt = 1/120 s, catch-up capped).
    - Accepts JSON commands: `controls`, `reset`, `pause`, `resume`, `set_controller`
-     (`manual` | `expert` | `expert_observing`).
+     (`manual` | `expert` | `expert_observing` | `fly_control`).
    - Broadcasts `hello` once per client and `state` at ~30 Hz.
-   - In `expert_observing`, steps MaleCNS on the 50 Hz sim-time scheduler after
-     each physics tick that crosses a neural instant. Neural output is telemetry
-     only.
+   - In `expert_observing` and `fly_control`, steps MaleCNS on the 50 Hz sim-time
+     scheduler **before** `act()` so vision is causal with the current pose.
+     `fly_control` sends decoder outputs to JSBSim. `expert_observing` does not.
 2. **Vite / Three.js** (port 5173)
    - Proxies `/ws` to the backend.
    - Sends manual inceptors.
@@ -48,6 +50,8 @@ decoder and MaleCNS still does **not** write inceptors. See `docs/vision.md`.
 | `controllers/base.py` | `Controller.observe` / `act` |
 | `controllers/manual.py` | Stores browser inceptors |
 | `controllers/expert.py` | Conventional cascaded-PID autoland (not MaleCNS) |
+| `controllers/trained.py` | FLY CONTROL: frozen MaleCNS + GRU decoder |
+| `brain/decoder.py` | Causal GRU, scaler, portable checkpoint |
 | `controllers/pid.py` | Discrete PID with anti-windup |
 | `guidance.py` | Glideslope / heading-error geometry |
 | `initial_conditions.py` | Seeded modest approach randomization |
@@ -58,7 +62,11 @@ decoder and MaleCNS still does **not** write inceptors. See `docs/vision.md`.
 | `evaluate.py` | Headless expert evaluation |
 | `record_expert.py` | Parquet expert demonstrations |
 | `brain/` | MaleCNS prepare / LIF / vision encoder / observing / replay |
-| `record_observing.py` | Parquet fly-observing-expert dataset (not a decoder) |
+| `record_observing.py` | Parquet fly-observing-expert dataset (retinal blobs) |
+| `record_decoder.py` | Compact DN-rate / expert-action training set |
+| `train_decoder.py` | Episode-split causal GRU training |
+| `evaluate_decoder.py` | Offline GRU vs Ridge vs mean |
+| `evaluate_fly.py` | Closed-loop FLY CONTROL landings |
 | `sandbox.py` | Glue: controller → FDM → optional MaleCNS observe → episode |
 | `protocol.py` | JSON schema |
 | `server.py` | `websockets` server + sim loop |
@@ -81,12 +89,10 @@ class Controller:
 
 JSBSim elevator sign conversion happens only in `aircraft.py`.
 
-`LandingSandbox.set_controller("manual"|"expert"|"expert_observing")` is the
-only legal switch. Names that would imply fly control (`malecns`,
-`fly_control`, …) are refused. `expert_observing` still instantiates
-`ExpertLandingController` as the sole `act()` source; `ObservingMaleCNS` has
-no `act()`. `ExpertLandingController.telemetry()` is labelled
-`kind: conventional_autopilot`.
+`LandingSandbox.set_controller("manual"|"expert"|"expert_observing"|"fly_control")`.
+`malecns` without a trained decoder is still refused. `expert_observing` still
+instantiates `ExpertLandingController` as the sole `act()` source.
+`fly_control` instantiates `TrainedMaleCNSController`; the expert is absent.
 
 Clocks (simulated time, never `requestAnimationFrame`):
 
@@ -125,16 +131,16 @@ Vanilla TypeScript. No React.
 - `runwayMesh.ts` — pavement, markings, chevrons, hills
 - `scene.ts` — lights, fog, chase / cockpit cameras (human view)
 - `flyEye.ts` — off-screen wide-FOV previews; not the canonical MaleCNS input
-- `hud.ts` — telemetry, MANUAL / EXPERT / EXPERT+FLY OBSERVING, integrity copy
+- `hud.ts` — telemetry, MANUAL / EXPERT / EXPERT+FLY OBSERVING / FLY CONTROL, integrity copy
 
-## What is explicitly out of Milestone 4
+## What is explicitly out of Milestone 5
 
-- MaleCNS writing JSBSim inceptors (`MaleCNSController` / decoder)
 - Pretending the expert autopilot is a fly
-- Claiming biological steering from left/right retinal differences
+- Claiming biological synaptic learning from the GRU
+- Untrained / hand-mapped `MaleCNSController`
 - Photoreal scenery / exact compound-eye optics
 - React
 - Wind
 
-See `docs/malecns.md` and `docs/vision.md`. The connectome must stay a real
-component if a later milestone is described as fly-controlled.
+See `docs/malecns.md`, `docs/vision.md`, and `docs/decoder.md`. The connectome
+must stay a real component if the project is described as fly-controlled.
