@@ -15,15 +15,33 @@ from fly_pilot.record_observing import synthetic_observer
 from fly_pilot.train_decoder import load_compact_tables
 
 
+def _sample_aligned(
+    pairs: list[tuple[np.ndarray, np.ndarray]],
+    max_rows: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    total = sum(int(x.shape[0]) for x, _ in pairs)
+    sampled_x: list[np.ndarray] = []
+    sampled_y: list[np.ndarray] = []
+    for x, y in pairs:
+        n = int(x.shape[0])
+        if n == 0:
+            continue
+        take = n if total <= max_rows else max(1, int(round(max_rows * n / total)))
+        index = np.linspace(0, n - 1, min(take, n), dtype=np.int64)
+        sampled_x.append(x[index])
+        sampled_y.append(y[index])
+    return np.concatenate(sampled_x, axis=0), np.concatenate(sampled_y, axis=0)
+
+
+def _sample_chunks(chunks: list[np.ndarray], max_rows: int) -> np.ndarray:
+    pairs = [(chunk, np.zeros((chunk.shape[0], 1), dtype=np.uint8)) for chunk in chunks if chunk.size]
+    sampled, _ = _sample_aligned(pairs, max_rows)
+    return sampled
+
+
 def _sample_rows(bundle: dict[str, Any], max_rows: int = 20_000) -> tuple[np.ndarray, np.ndarray]:
-    xs = [episode["x"] for episode in bundle["episodes"].values()]
-    ys = [episode["y"] for episode in bundle["episodes"].values()]
-    x = np.concatenate(xs, axis=0)
-    y = np.concatenate(ys, axis=0)
-    if x.shape[0] > max_rows:
-        indices = np.linspace(0, x.shape[0] - 1, max_rows, dtype=np.int64)
-        x = x[indices]
-        y = y[indices]
+    pairs = [(episode["x"], episode["y"]) for episode in bundle["episodes"].values()]
+    x, y = _sample_aligned(pairs, max_rows)
     return x.astype(np.float64), y.astype(np.float64)
 
 
@@ -75,10 +93,7 @@ def dataset_diagnostics(paths: Sequence[Path]) -> dict[str, Any]:
         if not nonempty:
             phase_features[phase] = {"sampled_rows": 0}
             continue
-        values = np.concatenate(nonempty, axis=0)
-        if values.shape[0] > 20_000:
-            index = np.linspace(0, values.shape[0] - 1, 20_000, dtype=np.int64)
-            values = values[index]
+        values = _sample_chunks(nonempty, 20_000)
         std = values.std(axis=0)
         phase_features[phase] = {
             "definition": (
