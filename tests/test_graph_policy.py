@@ -16,7 +16,9 @@ from fly_pilot.brain.graph_policy import (
     table_observation_matrix,
 )
 from fly_pilot.controllers.expert import ExpertLandingController
+from fly_pilot.controllers.graph import ConnectomeGraphController
 from fly_pilot.state import AircraftObservation
+from fly_pilot.verify_graph_artifact import verify_graph_artifact
 
 
 def _observation() -> AircraftObservation:
@@ -87,10 +89,18 @@ def test_population_graph_and_artifact_roundtrip(tmp_path: Path) -> None:
     assert output.shape == (2, 3, 4)
     assert hidden.shape == (1, 2, 10)
     path = tmp_path / "graph.pt"
-    GraphPolicyArtifact(config, graph, model, {"test": True}).save(path)
+    GraphPolicyArtifact(
+        config,
+        graph,
+        model,
+        {"test": True, "dataset": {}, "training": {}, "source": {}, "metrics": {}},
+    ).save(path)
     loaded = GraphPolicyArtifact.load(path)
     assert loaded.graph.sha256 == graph.sha256
     assert loaded.metadata["test"] is True
+    report = verify_graph_artifact(path)
+    assert report["ok"] is True
+    assert report["graph_check"] == "embedded-structural"
 
 
 def test_vectorized_observation_features_match_live_path() -> None:
@@ -126,3 +136,20 @@ def test_expert_exposes_guidance_targets_separately_from_inceptors() -> None:
     assert "target_airspeed_kts" in telemetry
     assert "throttle_trim" in telemetry
     assert telemetry["kind"] == "conventional_autopilot"
+
+
+def test_hybrid_graph_guidance_is_safety_bounded() -> None:
+    graph = build_population_graph(_connectome())
+    config = GraphPolicyConfig(node_hidden=8, temporal_hidden=10, message_layers=1)
+    model = ConnectomeGraphPolicy(config, graph)
+    artifact = GraphPolicyArtifact(config, graph, model)
+    controller = ConnectomeGraphController(artifact)
+    controller.reset()
+    model.step_numpy = lambda _features: np.asarray([-1.0, -1.0, -1.0, 0.0], dtype=np.float32)  # type: ignore[method-assign]
+    controller.observe(_observation())
+    controller.act()
+    telemetry = controller.telemetry()
+    assert telemetry["expert_in_loop"] is False
+    assert telemetry["uses_aircraft_telemetry"] is True
+    assert abs(telemetry["graph_roll_residual_deg"]) <= 4.0
+    assert telemetry["graph_roll_clipped"] is True

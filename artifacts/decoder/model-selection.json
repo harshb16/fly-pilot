@@ -1,0 +1,88 @@
+{
+  "selection_rule": [
+    "highest 20-episode validation success count",
+    "lowest mean progress score",
+    "lowest offline test mean MAE"
+  ],
+  "validation_seed": 3000,
+  "validation_episodes": 20,
+  "candidates": [
+    {
+      "name": "expert-full",
+      "checkpoint": "artifacts/decoder/candidates/expert-full/best.pt",
+      "data": [
+        "data/decoder/expert_dn_controls.parquet"
+      ],
+      "hidden_linear": 256,
+      "gru_hidden": 128,
+      "success_count": 0,
+      "success_rate": 0.0,
+      "mean_progress_score": 1352.5665363896571,
+      "offline_test_mean_mae": 0.042550858575850725
+    },
+    {
+      "name": "expert-small",
+      "checkpoint": "artifacts/decoder/candidates/expert-small/best.pt",
+      "data": [
+        "data/decoder/expert_dn_controls.parquet"
+      ],
+      "hidden_linear": 128,
+      "gru_hidden": 64,
+      "success_count": 0,
+      "success_rate": 0.0,
+      "mean_progress_score": 1381.6095922624938,
+      "offline_test_mean_mae": 0.04405626840889454
+    },
+    {
+      "name": "dagger-full",
+      "checkpoint": "artifacts/decoder/candidates/dagger-full/best.pt",
+      "data": [
+        "data/decoder/expert_dn_controls.parquet",
+        "data/decoder/dagger-round-1.parquet",
+        "data/decoder/dagger-round-2.parquet"
+      ],
+      "hidden_linear": 256,
+      "gru_hidden": 128,
+      "success_count": 0,
+      "success_rate": 0.0,
+      "mean_progress_score": 706.5219108759792,
+      "offline_test_mean_mae": 0.3503146804869175
+    },
+    {
+      "name": "dagger-small",
+      "checkpoint": "artifacts/decoder/candidates/dagger-small/best.pt",
+      "data": [
+        "data/decoder/expert_dn_controls.parquet",
+        "data/decoder/dagger-round-1.parquet",
+        "data/decoder/dagger-round-2.parquet"
+      ],
+      "hidden_linear": 128,
+      "gru_hidden": 64,
+      "success_count": 0,
+      "success_rate": 0.0,
+      "mean_progress_score": 978.722855902413,
+      "offline_test_mean_mae": 0.22595376893877983
+    }
+  ],
+  "ranking": [
+    "dagger-full",
+    "dagger-small",
+    "expert-full",
+    "expert-small"
+  ],
+  "winner": {
+    "name": "dagger-full",
+    "checkpoint": "artifacts/decoder/candidates/dagger-full/best.pt",
+    "data": [
+      "data/decoder/expert_dn_controls.parquet",
+      "data/decoder/dagger-round-1.parquet",
+      "data/decoder/dagger-round-2.parquet"
+    ],
+    "hidden_linear": 256,
+    "gru_hidden": 128,
+    "success_count": 0,
+    "success_rate": 0.0,
+    "mean_progress_score": 706.5219108759792,
+    "offline_test_mean_mae": 0.3503146804869175
+  }
+}

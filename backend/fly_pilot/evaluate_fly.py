@@ -213,6 +213,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--checkpoint", type=Path, default=None)
     parser.add_argument("--json", type=Path, default=Path("artifacts/decoder/fly-eval.json"))
     parser.add_argument("--video-dir", type=Path, default=Path("artifacts/decoder/videos"))
+    parser.add_argument("--no-videos", action="store_true", help="Skip GIF rendering and frame collection")
+    parser.add_argument("--no-first-attempt", action="store_true", help="Skip the separate first-attempt episode")
     args = parser.parse_args(argv)
     rows, payload = evaluate_fly(
         args.episodes,
@@ -220,6 +222,8 @@ def main(argv: list[str] | None = None) -> int:
         checkpoint=args.checkpoint,
         json_out=args.json,
         video_dir=args.video_dir,
+        include_first_attempt=not args.no_first_attempt,
+        write_videos=not args.no_videos,
     )
     print(format_report(payload["summary"], rows), end="")
     print(f"videos: {payload['videos']}")

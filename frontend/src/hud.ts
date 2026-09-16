@@ -92,7 +92,7 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
     </div>
     <div class="panel hybrid-guidance" id="hybrid-panel" hidden>
       <div class="fly-banner">HYBRID FLY GUIDANCE</div>
-      <p class="observing-note">TASK-TRAINED MALECNS POPULATION TOPOLOGY + CONVENTIONAL PID STABILIZATION. Uses aircraft telemetry; not a fixed-brain simulation.</p>
+      <p class="observing-note">SAFETY-BOUNDED CONNECTOME-GRAPH BANK RESIDUAL + CONVENTIONAL LATERAL ENVELOPE, GLIDESLOPE, AIRSPEED, FLARE, AND STABILIZATION. Uses aircraft telemetry.</p>
       <div class="readout"><span>ROLL CMD</span><strong id="hg-roll">—</strong><em>°</em></div>
       <div class="readout"><span>PITCH CMD</span><strong id="hg-pitch">—</strong><em>°</em></div>
       <div class="readout"><span>IAS CMD</span><strong id="hg-ias">—</strong><em>kt</em></div>
@@ -101,6 +101,9 @@ export function mountHud(root: HTMLElement, handlers: HudHandlers): (model: HudM
       <div class="readout"><span>ELV</span><strong id="hg-elv">—</strong></div>
       <div class="readout"><span>RDR</span><strong id="hg-rdr">—</strong></div>
       <div class="readout"><span>THR</span><strong id="hg-thr">—</strong></div>
+      <div class="readout"><span>PHASE</span><strong id="hg-phase">—</strong></div>
+      <div class="readout"><span>GRAPH RAW</span><strong id="hg-raw">—</strong><em>°</em></div>
+      <div class="readout"><span>RESIDUAL</span><strong id="hg-residual">—</strong><em>°</em></div>
     </div>
     <div class="panel controls">
       ${slider("aileron", "Aileron", -1, 1, 0)}
@@ -274,6 +277,9 @@ function renderHud(root: HTMLElement, model: HudModel): void {
       setText(root, "hg-elv", fmt(hybrid.elevator, 2));
       setText(root, "hg-rdr", fmt(hybrid.rudder, 2));
       setText(root, "hg-thr", fmt(hybrid.throttle, 2));
+      setText(root, "hg-phase", hybrid.phase ?? "—");
+      setText(root, "hg-raw", fmt(hybrid.graph_roll_command_deg, 1));
+      setText(root, "hg-residual", fmt(hybrid.graph_roll_residual_deg, 1));
     }
   }
 

@@ -51,8 +51,8 @@ def hello_payload(sandbox: LandingSandbox) -> dict[str, Any]:
     elif mode == "hybrid_guidance":
         note = (
             "HYBRID FLY GUIDANCE: a task-trained policy constrained by aggregated "
-            "MaleCNS population topology sets roll, pitch, airspeed, and throttle targets. "
-            "Conventional PID inner loops stabilize the Cessna. Aircraft telemetry is a policy input."
+            "MaleCNS population topology contributes a safety-bounded bank residual. Conventional logic controls "
+            "glideslope, airspeed, flare, and actuator stabilization. Aircraft telemetry is a policy input."
         )
     elif mode == "expert_observing":
         note = (
@@ -230,6 +230,11 @@ def state_payload(snapshot: SandboxSnapshot) -> dict[str, Any]:
                 "pitch_command_deg",
                 "target_airspeed_kts",
                 "throttle_trim",
+                "phase",
+                "graph_roll_command_deg",
+                "conventional_roll_reference_deg",
+                "graph_roll_residual_deg",
+                "graph_roll_clipped",
             )
             if k in snapshot.debug
         }

@@ -17,7 +17,7 @@ from fly_pilot.brain.graph_policy import (
 )
 from fly_pilot.controllers.base import Controller
 from fly_pilot.controllers.pid import PID
-from fly_pilot.guidance import clamp
+from fly_pilot.guidance import clamp, glideslope_error_m, heading_error_deg
 from fly_pilot.runway import Runway
 from fly_pilot.state import AircraftControls, AircraftObservation
 
@@ -45,6 +45,11 @@ class ConnectomeGraphController(Controller):
             "pitch_command_deg": 0.0,
             "target_airspeed_kts": 68.0,
             "throttle_trim": 0.4,
+            "phase": "stabilize",
+            "graph_roll_command_deg": 0.0,
+            "conventional_roll_reference_deg": 0.0,
+            "graph_roll_residual_deg": 0.0,
+            "graph_roll_clipped": False,
         }
         self._roll_pid = PID(0.04, 0.004, 0.0, -0.7, 0.7, 0.35)
         self._pitch_pid = PID(0.07, 0.012, 0.0, -0.8, 0.8, 0.45)
@@ -59,6 +64,17 @@ class ConnectomeGraphController(Controller):
         self._observation = None
         self._previous = None
         self._controls = AircraftControls(throttle=0.4)
+        self._guidance = {
+            "roll_command_deg": 0.0,
+            "pitch_command_deg": 0.0,
+            "target_airspeed_kts": 68.0,
+            "throttle_trim": 0.4,
+            "phase": "stabilize",
+            "graph_roll_command_deg": 0.0,
+            "conventional_roll_reference_deg": 0.0,
+            "graph_roll_residual_deg": 0.0,
+            "graph_roll_clipped": False,
+        }
         self._roll_pid.reset()
         self._pitch_pid.reset()
         self._speed_pid.reset()
@@ -70,14 +86,56 @@ class ConnectomeGraphController(Controller):
     def act(self) -> AircraftControls:
         if self._observation is not None:
             values = self.model.step_numpy(observation_vector(self._observation, self.runway))
-            self._guidance = {
-                "roll_command_deg": float(values[0]) * 25.0,
-                "pitch_command_deg": float(values[1]) * 8.0,
-                "target_airspeed_kts": 65.0 + float(values[2]) * 15.0,
-                "throttle_trim": float(values[3]) * 0.60,
-            }
+            graph_roll = float(values[0]) * 25.0
+            self._guidance = self._conventional_longitudinal_guidance(self._observation)
+            reference_roll = self._conventional_lateral_reference(self._observation)
+            deployed_roll = clamp(graph_roll, reference_roll - 4.0, reference_roll + 4.0)
+            self._guidance["roll_command_deg"] = deployed_roll
+            self._guidance["graph_roll_command_deg"] = graph_roll
+            self._guidance["conventional_roll_reference_deg"] = reference_roll
+            self._guidance["graph_roll_residual_deg"] = deployed_roll - reference_roll
+            self._guidance["graph_roll_clipped"] = abs(deployed_roll - graph_roll) > 1e-6
             self._controls = self._stabilize(self._observation)
         return self._controls
+
+    def _conventional_lateral_reference(self, obs: AircraftObservation) -> float:
+        """Safety envelope center; graph guidance may deviate by at most four degrees."""
+        cross_track_rate = 0.0
+        if self._previous is not None:
+            dt = max(obs.sim_time_s - self._previous.sim_time_s, 1e-3)
+            cross_track_rate = (obs.right_m - self._previous.right_m) / dt
+        phase = self._guidance["phase"]
+        heading_limit = 20.0 if phase in ("approach", "stabilize") else 7.0
+        heading_offset = clamp(-0.55 * obs.right_m - 0.40 * cross_track_rate, -heading_limit, heading_limit)
+        heading_command = self.runway.heading_deg + heading_offset
+        heading_error = heading_error_deg(obs.heading_deg, heading_command)
+        roll_limit = 18.0 if phase == "stabilize" else (25.0 if phase == "approach" else 7.0)
+        return clamp(1.7 * heading_error, -roll_limit, roll_limit)
+
+    def _conventional_longitudinal_guidance(self, obs: AircraftObservation) -> dict[str, float | str]:
+        """Explicit non-neural glideslope, airspeed, and flare guidance."""
+        if obs.on_ground or obs.alt_agl_m < 3.5:
+            return {
+                "phase": "touchdown",
+                "pitch_command_deg": 3.0,
+                "target_airspeed_kts": 0.0,
+                "throttle_trim": 0.0,
+            }
+        if obs.alt_agl_m < 18.0 and obs.along_m > -150.0:
+            return {
+                "phase": "flare",
+                "pitch_command_deg": clamp(2.5 + 0.15 * (18.0 - obs.alt_agl_m), 2.0, 6.0),
+                "target_airspeed_kts": 60.0,
+                "throttle_trim": 0.08,
+            }
+        gs_error = glideslope_error_m(obs.alt_agl_m, obs.along_m)
+        vertical_speed_command = clamp(50.0 * (-gs_error), -900.0, 400.0)
+        return {
+            "phase": "stabilize" if obs.sim_time_s < 2.0 else "approach",
+            "pitch_command_deg": clamp(-0.5 + 0.010 * (vertical_speed_command - obs.vertical_speed_fpm), -6.0, 7.0),
+            "target_airspeed_kts": 70.0 if obs.sim_time_s < 2.0 else 68.0,
+            "throttle_trim": 0.38 if gs_error > 8.0 else 0.46,
+        }
 
     def _stabilize(self, obs: AircraftObservation) -> AircraftControls:
         """Conventional rate-damped inner loop; the graph supplies targets."""
@@ -96,6 +154,9 @@ class ConnectomeGraphController(Controller):
             0.0,
             0.95,
         )
+        if self._guidance["phase"] == "flare":
+            throttle = min(throttle, 0.18)
+            elevator = clamp(elevator + 0.12 * max(0.0, 65.0 - obs.airspeed_kts) / 15.0, -1.0, 1.0)
         rudder = clamp(
             -0.045 * obs.beta_deg
             - 0.18 * (obs.r_deg_s * 3.1415926535 / 180.0)
@@ -108,13 +169,13 @@ class ConnectomeGraphController(Controller):
     def telemetry(self) -> dict[str, Any]:
         return {
             "kind": self.kind,
-            "label": "HYBRID FLY GUIDANCE — task-trained MaleCNS topology + conventional stabilization",
+            "label": "HYBRID FLY GUIDANCE — safety-bounded connectome-graph bank residual + conventional autoland",
             "male_cns_topology": True,
             "fixed_malecns": False,
             "biological_learning": False,
             "expert_in_loop": False,
             "uses_aircraft_telemetry": True,
-            "control_scope": "graph policy sets roll/pitch/airspeed/throttle targets; conventional PID tracks them",
+            "control_scope": "graph policy contributes a ±4° bank residual inside a conventional lateral envelope; conventional logic controls glideslope, airspeed, flare, and actuator stabilization",
             "population_graph_sha256": self.artifact.graph.sha256,
             "aileron": self._controls.aileron,
             "elevator": self._controls.elevator,

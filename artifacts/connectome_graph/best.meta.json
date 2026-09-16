@@ -1,0 +1,417 @@
+{
+  "kind": "trainable_malecns_population_graph_policy",
+  "checkpoint_sha256": "8b7a40e0d614542726e1c8a6166b6877512572cb810682c2a100bbf9eab3f047",
+  "population_graph_sha256": "f79da9cb341c2d8bb16b08a6b602a57a4a31a091cb5f6ea6dcdae015ce8f4d5c",
+  "population_names": [
+    "ENS",
+    "ascending_neuron",
+    "cb_efferent",
+    "cb_endocrine",
+    "cb_intrinsic",
+    "cb_motor",
+    "cb_sensory",
+    "cb_sensory_tbc",
+    "descending_neuron",
+    "descending_neuron_tbc",
+    "efferent_ascending",
+    "efferent_descending",
+    "ol_intrinsic",
+    "ol_sensory",
+    "sensory_ascending",
+    "sensory_ascending_tbc",
+    "sensory_descending",
+    "visual_centrifugal",
+    "visual_projection",
+    "visual_projection_tbc",
+    "vnc_efferent",
+    "vnc_endocrine",
+    "vnc_intrinsic",
+    "vnc_motor",
+    "vnc_sensory",
+    "vnc_sensory_tbc",
+    "vnc_tbc"
+  ],
+  "sensory_populations": [
+    "cb_sensory",
+    "ol_sensory",
+    "sensory_ascending",
+    "sensory_descending",
+    "vnc_sensory"
+  ],
+  "readout_populations": [
+    "cb_motor",
+    "descending_neuron",
+    "efferent_descending",
+    "vnc_efferent",
+    "vnc_motor"
+  ],
+  "observation_features": [
+    "sim_time_s",
+    "along_m",
+    "right_m",
+    "alt_agl_m",
+    "airspeed_kts",
+    "groundspeed_kts",
+    "vertical_speed_fpm",
+    "pitch_deg",
+    "roll_deg",
+    "heading_error_deg",
+    "alpha_deg",
+    "beta_deg",
+    "p_deg_s",
+    "q_deg_s",
+    "r_deg_s",
+    "glideslope_error_m"
+  ],
+  "parameter_count": 96068,
+  "uses_aircraft_telemetry": true,
+  "biological_learning": false,
+  "scientific_scope": "Measured MaleCNS connectivity is aggregated to population topology; all policy weights are task-trained. This is not a fixed-brain simulation.",
+  "dataset": {
+    "path": "data/graph/expert_guidance.parquet",
+    "sha256": "7e849c7d85220be3fcf53d71a2662c3d98719d32bfb36d0c42f5477a40c849fe",
+    "rows": 206177
+  },
+  "training": {
+    "seed": 17,
+    "epochs_requested": 40,
+    "epochs_completed": 40,
+    "patience": 8,
+    "batch_size": 48,
+    "sequence_length": 64,
+    "learning_rate": 0.0008,
+    "train_episode_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      13,
+      14,
+      15,
+      17,
+      19,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      42,
+      43,
+      45,
+      46,
+      47,
+      48,
+      49,
+      51,
+      52,
+      53,
+      57,
+      58,
+      59,
+      60,
+      62,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      79,
+      80,
+      81,
+      83,
+      84,
+      85,
+      86,
+      87,
+      89,
+      90,
+      91,
+      93,
+      94,
+      95,
+      97,
+      98,
+      99
+    ],
+    "validation_episode_ids": [
+      5,
+      11,
+      12,
+      16,
+      18,
+      20,
+      29,
+      41,
+      44,
+      50,
+      54,
+      55,
+      56,
+      61,
+      63,
+      78,
+      82,
+      88,
+      92,
+      96
+    ],
+    "target_scale": [
+      0.1896631121635437,
+      0.2568117380142212,
+      0.19404354691505432,
+      0.1678611934185028
+    ],
+    "targets": {
+      "roll": "roll_command_deg / 25",
+      "pitch": "pitch_command_deg / 8",
+      "airspeed": "(target_airspeed_kts - 65) / 15",
+      "throttle_trim": "throttle_trim / 0.60"
+    }
+  },
+  "source": {
+    "git_commit": "0582e289223602fee6a3137f5ce8c90ecdaa97e4",
+    "git_dirty": false
+  },
+  "metrics": {
+    "best_validation_loss": 0.004615382809407081,
+    "history": [
+      {
+        "epoch": 1,
+        "train_loss": 0.18915947319336093,
+        "val_loss": 0.04318256872086177
+      },
+      {
+        "epoch": 2,
+        "train_loss": 0.030761423804712532,
+        "val_loss": 0.023470754675725673
+      },
+      {
+        "epoch": 3,
+        "train_loss": 0.020694389984480862,
+        "val_loss": 0.01890045125886662
+      },
+      {
+        "epoch": 4,
+        "train_loss": 0.01524220471252714,
+        "val_loss": 0.015875902915752766
+      },
+      {
+        "epoch": 5,
+        "train_loss": 0.013705455703719498,
+        "val_loss": 0.01242219452324428
+      },
+      {
+        "epoch": 6,
+        "train_loss": 0.013324497315235568,
+        "val_loss": 0.012132261842942166
+      },
+      {
+        "epoch": 7,
+        "train_loss": 0.010956360431562518,
+        "val_loss": 0.0114102195891747
+      },
+      {
+        "epoch": 8,
+        "train_loss": 0.010064949259473786,
+        "val_loss": 0.010257263823573712
+      },
+      {
+        "epoch": 9,
+        "train_loss": 0.009405899453385805,
+        "val_loss": 0.009104506511773382
+      },
+      {
+        "epoch": 10,
+        "train_loss": 0.009512619826654524,
+        "val_loss": 0.009178016626341183
+      },
+      {
+        "epoch": 11,
+        "train_loss": 0.008537042785746294,
+        "val_loss": 0.008214340454652498
+      },
+      {
+        "epoch": 12,
+        "train_loss": 0.010247712811346206,
+        "val_loss": 0.009293547735229633
+      },
+      {
+        "epoch": 13,
+        "train_loss": 0.008201539298053558,
+        "val_loss": 0.010103456384437244
+      },
+      {
+        "epoch": 14,
+        "train_loss": 0.007966810810794435,
+        "val_loss": 0.008796809286467935
+      },
+      {
+        "epoch": 15,
+        "train_loss": 0.008425253562909003,
+        "val_loss": 0.007782556156211711
+      },
+      {
+        "epoch": 16,
+        "train_loss": 0.007511022924005682,
+        "val_loss": 0.008545902668071011
+      },
+      {
+        "epoch": 17,
+        "train_loss": 0.008140071394745645,
+        "val_loss": 0.007730693652614453
+      },
+      {
+        "epoch": 18,
+        "train_loss": 0.006676632127502914,
+        "val_loss": 0.0071745743510797395
+      },
+      {
+        "epoch": 19,
+        "train_loss": 0.007106831537986948,
+        "val_loss": 0.007379207995049316
+      },
+      {
+        "epoch": 20,
+        "train_loss": 0.007033810923857778,
+        "val_loss": 0.00641924382603549
+      },
+      {
+        "epoch": 21,
+        "train_loss": 0.008467437338829696,
+        "val_loss": 0.00695523578322586
+      },
+      {
+        "epoch": 22,
+        "train_loss": 0.006041525236590305,
+        "val_loss": 0.007724476041198683
+      },
+      {
+        "epoch": 23,
+        "train_loss": 0.005643874933449896,
+        "val_loss": 0.005810652100863247
+      },
+      {
+        "epoch": 24,
+        "train_loss": 0.0070488365751751455,
+        "val_loss": 0.0077959241028478805
+      },
+      {
+        "epoch": 25,
+        "train_loss": 0.00602516414652366,
+        "val_loss": 0.007456277454651236
+      },
+      {
+        "epoch": 26,
+        "train_loss": 0.0054632348099801055,
+        "val_loss": 0.007154788620951147
+      },
+      {
+        "epoch": 27,
+        "train_loss": 0.00581832101367124,
+        "val_loss": 0.006765469600160614
+      },
+      {
+        "epoch": 28,
+        "train_loss": 0.005761288098700209,
+        "val_loss": 0.006559352124375957
+      },
+      {
+        "epoch": 29,
+        "train_loss": 0.005590435297490871,
+        "val_loss": 0.005750437391678432
+      },
+      {
+        "epoch": 30,
+        "train_loss": 0.005588652092877665,
+        "val_loss": 0.006002455952614093
+      },
+      {
+        "epoch": 31,
+        "train_loss": 0.0058383315024941535,
+        "val_loss": 0.006632487009361522
+      },
+      {
+        "epoch": 32,
+        "train_loss": 0.005590128187678861,
+        "val_loss": 0.0056229843064508536
+      },
+      {
+        "epoch": 33,
+        "train_loss": 0.00637112663549792,
+        "val_loss": 0.005017013170142123
+      },
+      {
+        "epoch": 34,
+        "train_loss": 0.004628455003539715,
+        "val_loss": 0.005420733659349857
+      },
+      {
+        "epoch": 35,
+        "train_loss": 0.005064132776378758,
+        "val_loss": 0.004911999702227152
+      },
+      {
+        "epoch": 36,
+        "train_loss": 0.005509791287896638,
+        "val_loss": 0.005442392041391515
+      },
+      {
+        "epoch": 37,
+        "train_loss": 0.004631252696075721,
+        "val_loss": 0.005422993718807821
+      },
+      {
+        "epoch": 38,
+        "train_loss": 0.005020231049285271,
+        "val_loss": 0.005854670351829754
+      },
+      {
+        "epoch": 39,
+        "train_loss": 0.004757662857475578,
+        "val_loss": 0.004615382809407081
+      },
+      {
+        "epoch": 40,
+        "train_loss": 0.0043045491658285214,
+        "val_loss": 0.005161515989066257
+      }
+    ]
+  },
+  "config": {
+    "observation_dim": 16,
+    "node_hidden": 64,
+    "temporal_hidden": 96,
+    "message_layers": 5,
+    "dropout": 0.05,
+    "kind": "trainable_malecns_population_graph_policy"
+  }
+}

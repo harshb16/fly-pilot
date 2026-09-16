@@ -28,6 +28,17 @@ artifacts/decoder/*
 !artifacts/decoder/validation-eval.json
 !artifacts/decoder/final-eval.json
 !artifacts/decoder/model-selection.json
+!artifacts/connectome_graph/
+artifacts/connectome_graph/*
+!artifacts/connectome_graph/best.pt
+!artifacts/connectome_graph/best.meta.json
+!artifacts/connectome_graph/train_report.json
+!artifacts/connectome_graph/validation.json
+!artifacts/connectome_graph/validation-hybrid.json
+!artifacts/connectome_graph/validation-residual.json
+!artifacts/connectome_graph/final-eval.json
+!artifacts/connectome_graph/demo.gif
+!artifacts/expert-final-eval.json
 data/malecns/raw/
 data/malecns/prepared/
 data/expert/*.parquet

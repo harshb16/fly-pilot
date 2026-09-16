@@ -36,6 +36,7 @@ fly-pilot-diagnose-decoder = "fly_pilot.diagnose_decoder:main"
 fly-pilot-select-decoder = "fly_pilot.select_decoder:main"
 fly-pilot-train-graph = "fly_pilot.train_graph_policy:main"
 fly-pilot-eval-graph = "fly_pilot.evaluate_graph:main"
+fly-pilot-verify-graph = "fly_pilot.verify_graph_artifact:main"
 
 [tool.setuptools.packages.find]
 include = ["fly_pilot*"]

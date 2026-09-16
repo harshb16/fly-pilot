@@ -144,6 +144,11 @@ export interface HybridGuidanceTelemetry {
   pitch_command_deg: number;
   target_airspeed_kts: number;
   throttle_trim: number;
+  phase?: string;
+  graph_roll_command_deg?: number;
+  conventional_roll_reference_deg?: number;
+  graph_roll_residual_deg?: number;
+  graph_roll_clipped?: boolean;
 }
 
 export interface StateMessage {

@@ -16,7 +16,7 @@
     "hidden_linear": 256,
     "gru_hidden": 128,
     "gru_layers": 2,
-    "dropout": 0.2,
+    "dropout": 0.1,
     "sequence_length": 50,
     "dt": 0.02,
     "kind": "fixed_malecns_plus_trained_temporal_decoder",
@@ -42,24 +42,24 @@
   ],
   "scaler": {
     "mean_preview": [
-      3.7925961017608643,
-      3.7275807857513428,
-      3.273695230484009,
-      1.0571109056472778,
-      4.380667686462402,
-      1.2071839570999146,
-      0.9592456221580505,
-      2.9360551834106445
+      3.793074131011963,
+      3.723296642303467,
+      3.2688374519348145,
+      1.0558885335922241,
+      4.386687755584717,
+      1.2027249336242676,
+      0.9541299343109131,
+      2.9397690296173096
     ],
     "std_preview": [
-      4.8553643226623535,
-      4.838547706604004,
-      4.692501068115234,
-      3.075982093811035,
-      4.96110200881958,
-      3.261051893234253,
-      2.9426815509796143,
-      4.551279067993164
+      4.852366924285889,
+      4.834697246551514,
+      4.690800666809082,
+      3.0731935501098633,
+      4.963048458099365,
+      3.2527990341186523,
+      2.937845468521118,
+      4.556224822998047
     ],
     "n": 2628
   },
@@ -72,706 +72,911 @@
     "not_biological": true
   },
   "dataset": {
-    "path": "data/decoder/expert_dn_controls.parquet",
+    "paths": [
+      "data/decoder/expert_dn_controls.parquet",
+      "data/decoder/dagger-round-1.parquet",
+      "data/decoder/dagger-round-2.parquet"
+    ],
+    "files": [
+      {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "sha256": "f0078c8fedf34baa9bbd1662b7a9d51bd0ec8e784f491f81568e5916392fbdaa",
+        "rows": 256848
+      },
+      {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "sha256": "c4f5fa2f29127c66099729908e50c22ff52661bf4dfd05672cd808bdcd4fb49d",
+        "rows": 81768
+      },
+      {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "sha256": "8b1dd94e4e9b3a91d62715e3bb50c3102e34039681ad37abdc9b0b7797e19c25",
+        "rows": 75806
+      }
+    ],
     "schema": "decoder-training-v1",
-    "rows": 256848,
-    "n_episodes": 50,
+    "rows": 414422,
+    "n_episodes": 100,
     "split": {
       "train": [
-        18,
-        23,
+        82,
         36,
-        4,
-        2,
-        3,
-        34,
-        24,
         20,
-        26,
-        1,
-        11,
-        47,
-        22,
-        10,
-        45,
-        30,
-        27,
-        6,
-        21,
-        38,
-        19,
-        43,
+        5,
+        93,
         16,
-        37,
-        35,
-        28,
-        0,
-        8,
-        46,
-        48,
-        17,
-        32,
-        25,
-        44,
-        9,
-        40,
-        42,
+        94,
+        52,
+        72,
+        90,
+        83,
         13,
-        12
+        81,
+        37,
+        11,
+        10,
+        75,
+        8,
+        27,
+        9,
+        97,
+        23,
+        22,
+        19,
+        50,
+        98,
+        85,
+        44,
+        71,
+        4,
+        25,
+        70,
+        34,
+        39,
+        64,
+        57,
+        65,
+        42,
+        66,
+        15,
+        30,
+        2,
+        35,
+        86,
+        43,
+        17,
+        74,
+        28,
+        87,
+        18,
+        80,
+        3,
+        1,
+        55,
+        53,
+        24,
+        68,
+        21,
+        47,
+        0,
+        60,
+        6,
+        62,
+        67,
+        45,
+        84,
+        26,
+        51,
+        49,
+        91,
+        92,
+        99,
+        40,
+        61,
+        12,
+        32,
+        96,
+        46,
+        58,
+        14,
+        73,
+        38,
+        88,
+        31,
+        89,
+        48,
+        77,
+        76,
+        7,
+        63
       ],
       "val": [
-        7,
-        39,
-        49,
-        5,
-        14
+        69,
+        78,
+        59,
+        54,
+        29
       ],
       "test": [
-        29,
         41,
+        56,
         33,
-        15,
-        31
+        79,
+        95
       ]
     },
+    "episode_sources": {
+      "0": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 0
+      },
+      "1": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 1
+      },
+      "2": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 2
+      },
+      "3": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 3
+      },
+      "4": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 4
+      },
+      "5": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 5
+      },
+      "6": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 6
+      },
+      "7": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 7
+      },
+      "8": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 8
+      },
+      "9": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 9
+      },
+      "10": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 10
+      },
+      "11": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 11
+      },
+      "12": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 12
+      },
+      "13": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 13
+      },
+      "14": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 14
+      },
+      "15": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 15
+      },
+      "16": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 16
+      },
+      "17": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 17
+      },
+      "18": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 18
+      },
+      "19": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 19
+      },
+      "20": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 20
+      },
+      "21": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 21
+      },
+      "22": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 22
+      },
+      "23": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 23
+      },
+      "24": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 24
+      },
+      "25": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 25
+      },
+      "26": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 26
+      },
+      "27": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 27
+      },
+      "28": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 28
+      },
+      "29": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 29
+      },
+      "30": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 30
+      },
+      "31": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 31
+      },
+      "32": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 32
+      },
+      "33": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 33
+      },
+      "34": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 34
+      },
+      "35": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 35
+      },
+      "36": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 36
+      },
+      "37": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 37
+      },
+      "38": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 38
+      },
+      "39": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 39
+      },
+      "40": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 40
+      },
+      "41": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 41
+      },
+      "42": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 42
+      },
+      "43": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 43
+      },
+      "44": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 44
+      },
+      "45": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 45
+      },
+      "46": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 46
+      },
+      "47": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 47
+      },
+      "48": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 48
+      },
+      "49": {
+        "path": "data/decoder/expert_dn_controls.parquet",
+        "source_episode_id": 49
+      },
+      "50": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 0
+      },
+      "51": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 1
+      },
+      "52": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 2
+      },
+      "53": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 3
+      },
+      "54": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 4
+      },
+      "55": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 5
+      },
+      "56": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 6
+      },
+      "57": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 7
+      },
+      "58": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 8
+      },
+      "59": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 9
+      },
+      "60": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 10
+      },
+      "61": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 11
+      },
+      "62": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 12
+      },
+      "63": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 13
+      },
+      "64": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 14
+      },
+      "65": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 15
+      },
+      "66": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 16
+      },
+      "67": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 17
+      },
+      "68": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 18
+      },
+      "69": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 19
+      },
+      "70": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 20
+      },
+      "71": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 21
+      },
+      "72": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 22
+      },
+      "73": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 23
+      },
+      "74": {
+        "path": "data/decoder/dagger-round-1.parquet",
+        "source_episode_id": 24
+      },
+      "75": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 0
+      },
+      "76": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 1
+      },
+      "77": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 2
+      },
+      "78": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 3
+      },
+      "79": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 4
+      },
+      "80": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 5
+      },
+      "81": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 6
+      },
+      "82": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 7
+      },
+      "83": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 8
+      },
+      "84": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 9
+      },
+      "85": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 10
+      },
+      "86": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 11
+      },
+      "87": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 12
+      },
+      "88": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 13
+      },
+      "89": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 14
+      },
+      "90": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 15
+      },
+      "91": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 16
+      },
+      "92": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 17
+      },
+      "93": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 18
+      },
+      "94": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 19
+      },
+      "95": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 20
+      },
+      "96": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 21
+      },
+      "97": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 22
+      },
+      "98": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 23
+      },
+      "99": {
+        "path": "data/decoder/dagger-round-2.parquet",
+        "source_episode_id": 24
+      }
+    },
     "sequence_length": 50,
-    "stride": 10,
-    "n_train_sequences": 9709,
-    "n_val_sequences": 1231
+    "training": "episode_tbptt",
+    "target_shift_steps": 2,
+    "n_train_rows": 374907,
+    "n_train_sequences": 7537,
+    "n_val_sequences": 370
   },
-  "git_commit": "22f286fd9f37b5c02eee6b1c0f0eaae1dd86a16b",
+  "git_commit": "cabe0cf13ab771877cbd2dd436666de693cc0ae1",
+  "git_dirty": false,
   "training_seed": 0,
+  "training_command": [
+    "python",
+    "-m",
+    "fly_pilot.train_decoder",
+    "--data",
+    "data/decoder/expert_dn_controls.parquet",
+    "--data",
+    "data/decoder/dagger-round-1.parquet",
+    "--data",
+    "data/decoder/dagger-round-2.parquet",
+    "--output",
+    "artifacts/decoder/candidates/dagger-full/best.pt",
+    "--epochs",
+    "30",
+    "--patience",
+    "8",
+    "--hidden-linear",
+    "256",
+    "--gru-hidden",
+    "128"
+  ],
+  "dependencies": {
+    "python": "3.13.15",
+    "jsbsim": "1.3.1",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "websockets": "17.1",
+    "pyarrow": "25.0.1",
+    "torch": "2.14.0",
+    "matplotlib": "3.11.2"
+  },
+  "seed_ranges": {
+    "training": {
+      "start": 1000
+    },
+    "validation": {
+      "start": 3000,
+      "episodes": 20
+    },
+    "test": {
+      "start": 4000,
+      "episodes": 100
+    }
+  },
   "metrics": {
-    "best_val_loss": 0.11835198375765331,
+    "best_val_loss": 3.8447081573106145,
     "history": [
       {
         "epoch": 1,
         "train": {
-          "huber_aileron": 0.08464359963555165,
-          "huber_elevator": 0.03642542119470887,
-          "huber_rudder": 0.043208788328572396,
-          "huber_throttle": 0.17437250321789274,
-          "huber": 0.08466257799962992,
-          "smooth": 0.0001994393705225456,
-          "loss": 0.08467255013533047
+          "huber_aileron": 3.5583382763017726,
+          "huber_elevator": 2.26597264166145,
+          "huber_rudder": 0.8620239698375861,
+          "huber_throttle": 0.5270187208179353,
+          "huber": 1.803338401597715,
+          "smooth": 1.3509118528323338e-05,
+          "loss": 1.803338522872633
         },
         "val": {
-          "huber_aileron": 0.12249048248646999,
-          "huber_elevator": 0.05646266107894964,
-          "huber_rudder": 0.06360329675500269,
-          "huber_throttle": 0.2765185920787709,
-          "huber": 0.12976875776642716,
-          "smooth": 9.336833913535388e-05,
-          "loss": 0.12977342711543882
+          "huber_aileron": 8.794991230299049,
+          "huber_elevator": 6.110104381104277,
+          "huber_rudder": 2.959786479519145,
+          "huber_throttle": 0.5029180340807117,
+          "huber": 4.591950011575544,
+          "smooth": 2.2795495928639375e-06,
+          "loss": 4.5919500171936845
         }
       },
       {
         "epoch": 2,
         "train": {
-          "huber_aileron": 0.03972436754106616,
-          "huber_elevator": 0.015012210099789109,
-          "huber_rudder": 0.020447422186053884,
-          "huber_throttle": 0.05987747058370557,
-          "huber": 0.03376536758668733,
-          "smooth": 0.0001683569827745707,
-          "loss": 0.033773785418657436
+          "huber_aileron": 4.083426102231337,
+          "huber_elevator": 2.4680189743829866,
+          "huber_rudder": 1.0752623120251819,
+          "huber_throttle": 0.49918506581657135,
+          "huber": 2.0314731121925953,
+          "smooth": 2.6772102277120726e-05,
+          "loss": 2.031473367896695
         },
         "val": {
-          "huber_aileron": 0.12066555518790015,
-          "huber_elevator": 0.0509137269532816,
-          "huber_rudder": 0.06534788430390226,
-          "huber_throttle": 0.26071268869201086,
-          "huber": 0.12440996355824656,
-          "smooth": 8.497702748916873e-05,
-          "loss": 0.12441421308639375
+          "huber_aileron": 7.915526161403269,
+          "huber_elevator": 4.806307494883092,
+          "huber_rudder": 2.8192671087904,
+          "huber_throttle": 0.5947110002556804,
+          "huber": 4.033952933267967,
+          "smooth": 2.106587511526733e-06,
+          "loss": 4.03395294228921
         }
       },
       {
         "epoch": 3,
         "train": {
-          "huber_aileron": 0.02670594639585183,
-          "huber_elevator": 0.010053808052519327,
-          "huber_rudder": 0.01378404390706667,
-          "huber_throttle": 0.03159462025042323,
-          "huber": 0.02053460469500114,
-          "smooth": 0.00015283988810683673,
-          "loss": 0.020542246687703165
+          "huber_aileron": 3.853314993809893,
+          "huber_elevator": 2.3165940903086186,
+          "huber_rudder": 1.0197197378024339,
+          "huber_throttle": 0.5068740321693606,
+          "huber": 1.924125711697804,
+          "smooth": 1.4706565316016753e-05,
+          "loss": 1.9241258485251227
         },
         "val": {
-          "huber_aileron": 0.11988967356526038,
-          "huber_elevator": 0.05186074976083617,
-          "huber_rudder": 0.06096228004082457,
-          "huber_throttle": 0.2642738807873873,
-          "huber": 0.12424664704927377,
-          "smooth": 7.914562541243088e-05,
-          "loss": 0.12425060487993352
+          "huber_aileron": 8.785267982269461,
+          "huber_elevator": 5.163450721857717,
+          "huber_rudder": 2.6537093508032124,
+          "huber_throttle": 0.5689321808637524,
+          "huber": 4.292840056685177,
+          "smooth": 1.4668061509370533e-05,
+          "loss": 4.29284017599515
         }
       },
       {
         "epoch": 4,
         "train": {
-          "huber_aileron": 0.021637421397452398,
-          "huber_elevator": 0.008227884279421333,
-          "huber_rudder": 0.010746364426512204,
-          "huber_throttle": 0.025428505434886332,
-          "huber": 0.016510043901589253,
-          "smooth": 0.00014338336915997144,
-          "loss": 0.016517213070105386
+          "huber_aileron": 4.134664918626466,
+          "huber_elevator": 2.504542146127413,
+          "huber_rudder": 1.048607269103805,
+          "huber_throttle": 0.5080415397351732,
+          "huber": 2.0489639678283766,
+          "smooth": 1.2806499531002347e-05,
+          "loss": 2.048964083169996
         },
         "val": {
-          "huber_aileron": 0.12136306344265384,
-          "huber_elevator": 0.055683794026202584,
-          "huber_rudder": 0.060273216048545845,
-          "huber_throttle": 0.26519728479785964,
-          "huber": 0.12562933902244094,
-          "smooth": 7.324466130669023e-05,
-          "loss": 0.12563300152103624
+          "huber_aileron": 8.84754475223253,
+          "huber_elevator": 6.320824509969837,
+          "huber_rudder": 2.9847056755963424,
+          "huber_throttle": 0.5051944070251035,
+          "huber": 4.664567339291947,
+          "smooth": 1.4910184512012386e-06,
+          "loss": 4.664567342546542
         }
       },
       {
         "epoch": 5,
         "train": {
-          "huber_aileron": 0.01652205279641639,
-          "huber_elevator": 0.006040402129599349,
-          "huber_rudder": 0.008559093563978543,
-          "huber_throttle": 0.016756269301378354,
-          "huber": 0.011969454451103555,
-          "smooth": 0.00012186662406837829,
-          "loss": 0.011975547769820375
+          "huber_aileron": 4.031189974040756,
+          "huber_elevator": 2.525982846231392,
+          "huber_rudder": 1.035756405782399,
+          "huber_throttle": 0.49076939461359764,
+          "huber": 2.020924652920233,
+          "smooth": 1.5123418029712422e-05,
+          "loss": 2.0209247934169707
         },
         "val": {
-          "huber_aileron": 0.12163849725303325,
-          "huber_elevator": 0.05702664543021858,
-          "huber_rudder": 0.06219860683074342,
-          "huber_throttle": 0.2620495590804653,
-          "huber": 0.12572832810752965,
-          "smooth": 6.389644302355198e-05,
-          "loss": 0.12573152296124146
+          "huber_aileron": 7.992673762905336,
+          "huber_elevator": 4.283824456933055,
+          "huber_rudder": 2.610944348362249,
+          "huber_throttle": 0.5942651732930145,
+          "huber": 3.8704269268524807,
+          "smooth": 2.2790264953730886e-06,
+          "loss": 3.870426935521332
         }
       },
       {
         "epoch": 6,
         "train": {
-          "huber_aileron": 0.01513197761538394,
-          "huber_elevator": 0.005332166507868541,
-          "huber_rudder": 0.007109271277461808,
-          "huber_throttle": 0.013907337301185192,
-          "huber": 0.010370188186718442,
-          "smooth": 0.00010985878058115621,
-          "loss": 0.010375681122277037
+          "huber_aileron": 3.8932641986809133,
+          "huber_elevator": 2.5278409242841846,
+          "huber_rudder": 1.133859904384388,
+          "huber_throttle": 0.4952041909169032,
+          "huber": 2.0125423038743815,
+          "smooth": 2.491267905498533e-05,
+          "loss": 2.0125425408617295
         },
         "val": {
-          "huber_aileron": 0.1197559581132146,
-          "huber_elevator": 0.05303824913322127,
-          "huber_rudder": 0.05872542435732706,
-          "huber_throttle": 0.2639197756645161,
-          "huber": 0.12385985199603941,
-          "smooth": 5.2109571697656065e-05,
-          "loss": 0.12386245770355711
+          "huber_aileron": 8.96011425874511,
+          "huber_elevator": 6.263564894225046,
+          "huber_rudder": 3.0115452292056304,
+          "huber_throttle": 0.5052579520304051,
+          "huber": 4.685120579902385,
+          "smooth": 6.383266937315991e-06,
+          "loss": 4.685120605692469
         }
       },
       {
         "epoch": 7,
         "train": {
-          "huber_aileron": 0.014135209557560428,
-          "huber_elevator": 0.005637110683520799,
-          "huber_rudder": 0.00667491618590276,
-          "huber_throttle": 0.01527585451455888,
-          "huber": 0.010430772723998304,
-          "smooth": 0.00010757463356157607,
-          "loss": 0.0104361514382899
+          "huber_aileron": 4.124220391111961,
+          "huber_elevator": 2.511990207442494,
+          "huber_rudder": 1.1280106151819438,
+          "huber_throttle": 0.4870728970440807,
+          "huber": 2.0628235289391283,
+          "smooth": 1.8358020010760443e-05,
+          "loss": 2.06282370045418
         },
         "val": {
-          "huber_aileron": 0.11762053345317965,
-          "huber_elevator": 0.05277340604724096,
-          "huber_rudder": 0.05788779487627764,
-          "huber_throttle": 0.2599252982476315,
-          "huber": 0.12205175809296114,
-          "smooth": 6.407516345709816e-05,
-          "loss": 0.12205496331821981
+          "huber_aileron": 7.889482608588564,
+          "huber_elevator": 4.363071499062651,
+          "huber_rudder": 2.59876181360309,
+          "huber_throttle": 0.527515702025581,
+          "huber": 3.844707912528837,
+          "smooth": 2.751974155404507e-05,
+          "loss": 3.8447081573106145
         }
       },
       {
         "epoch": 8,
         "train": {
-          "huber_aileron": 0.014019863098503829,
-          "huber_elevator": 0.006320008055151239,
-          "huber_rudder": 0.006663647585121157,
-          "huber_throttle": 0.016969169948796266,
-          "huber": 0.010993172173715109,
-          "smooth": 0.00011086377424638277,
-          "loss": 0.010998715374993138
+          "huber_aileron": 3.8904319440787503,
+          "huber_elevator": 2.2991784891933276,
+          "huber_rudder": 1.0437681226398132,
+          "huber_throttle": 0.42663481840151135,
+          "huber": 1.915003343736781,
+          "smooth": 1.4854003566397405e-05,
+          "loss": 1.9150034813550216
         },
         "val": {
-          "huber_aileron": 0.11692983873775108,
-          "huber_elevator": 0.05866935986922691,
-          "huber_rudder": 0.05997605441144196,
-          "huber_throttle": 0.2645689935193627,
-          "huber": 0.1250360619530759,
-          "smooth": 5.980191327852209e-05,
-          "loss": 0.1250390522726267
+          "huber_aileron": 8.836673393092742,
+          "huber_elevator": 6.227748998929117,
+          "huber_rudder": 3.0403041909320194,
+          "huber_throttle": 0.4930649883599914,
+          "huber": 4.64944790487958,
+          "smooth": 5.086532915159241e-06,
+          "loss": 4.649447930261895
         }
       },
       {
         "epoch": 9,
         "train": {
-          "huber_aileron": 0.012013022337934305,
-          "huber_elevator": 0.0045105697993914826,
-          "huber_rudder": 0.005702326870738196,
-          "huber_throttle": 0.012549310344957196,
-          "huber": 0.008693807334922978,
-          "smooth": 9.74491036593334e-05,
-          "loss": 0.008698679785254907
+          "huber_aileron": 3.5383334717134214,
+          "huber_elevator": 2.0580061348435397,
+          "huber_rudder": 0.9885050320787785,
+          "huber_throttle": 0.36469660679772614,
+          "huber": 1.737385309089394,
+          "smooth": 1.8744734764548608e-05,
+          "loss": 1.737385485284976
         },
         "val": {
-          "huber_aileron": 0.1170776277831937,
-          "huber_elevator": 0.056027410556441296,
-          "huber_rudder": 0.057653945053522414,
-          "huber_throttle": 0.25972289260621967,
-          "huber": 0.12262046839074268,
-          "smooth": 5.512202537298057e-05,
-          "loss": 0.12262322522651453
+          "huber_aileron": 9.068402851905951,
+          "huber_elevator": 5.44345875891882,
+          "huber_rudder": 3.255130363589332,
+          "huber_throttle": 0.47483470292535385,
+          "huber": 4.560456678351841,
+          "smooth": 1.3545805213001773e-05,
+          "loss": 4.560456784834733
         }
       },
       {
         "epoch": 10,
         "train": {
-          "huber_aileron": 0.010150074234993322,
-          "huber_elevator": 0.0034876498777290446,
-          "huber_rudder": 0.0045337758785155115,
-          "huber_throttle": 0.00794377380788719,
-          "huber": 0.006528818469511459,
-          "smooth": 8.248578552385874e-05,
-          "loss": 0.006532942750982179
+          "huber_aileron": 2.745655217990334,
+          "huber_elevator": 1.6310350127275504,
+          "huber_rudder": 0.7674218183505342,
+          "huber_throttle": 0.28153414306282426,
+          "huber": 1.3564115473769773,
+          "smooth": 2.5921511865128575e-05,
+          "loss": 1.3564117998595528
         },
         "val": {
-          "huber_aileron": 0.11458383979693104,
-          "huber_elevator": 0.0559025214555637,
-          "huber_rudder": 0.05919582382533941,
-          "huber_throttle": 0.25194771097392427,
-          "huber": 0.12040747379182608,
-          "smooth": 4.315753173980372e-05,
-          "loss": 0.1204096316390175
+          "huber_aileron": 8.075805396558968,
+          "huber_elevator": 6.152419483573868,
+          "huber_rudder": 2.7592163461084303,
+          "huber_throttle": 0.4664204481548655,
+          "huber": 4.363465452677495,
+          "smooth": 2.1127497912995583e-05,
+          "loss": 4.363465636163144
         }
       },
       {
         "epoch": 11,
         "train": {
-          "huber_aileron": 0.009848292246905864,
-          "huber_elevator": 0.0030810440237644624,
-          "huber_rudder": 0.004247327439799211,
-          "huber_throttle": 0.006387481382316135,
-          "huber": 0.005891036269096949,
-          "smooth": 7.456311273294685e-05,
-          "loss": 0.005894764415694238
+          "huber_aileron": 2.251819157951131,
+          "huber_elevator": 1.5007841041487706,
+          "huber_rudder": 0.6373517495363713,
+          "huber_throttle": 0.22197150776456062,
+          "huber": 1.15298162815867,
+          "smooth": 2.584288996323417e-05,
+          "loss": 1.1529818805879883
         },
         "val": {
-          "huber_aileron": 0.11572756423832631,
-          "huber_elevator": 0.055527163524703764,
-          "huber_rudder": 0.05686567904043628,
-          "huber_throttle": 0.2541843054622605,
-          "huber": 0.12057617849174451,
-          "smooth": 4.007923605779258e-05,
-          "loss": 0.12057818286120892
+          "huber_aileron": 8.481204141953306,
+          "huber_elevator": 4.114997410244384,
+          "huber_rudder": 2.8063511130096574,
+          "huber_throttle": 0.433333298662281,
+          "huber": 3.958971483945041,
+          "smooth": 3.437139918298457e-05,
+          "loss": 3.958971792540035
         }
       },
       {
         "epoch": 12,
         "train": {
-          "huber_aileron": 0.00961913391709929,
-          "huber_elevator": 0.002897985155808876,
-          "huber_rudder": 0.00441203242044319,
-          "huber_throttle": 0.006054067923234778,
-          "huber": 0.00574580484888435,
-          "smooth": 7.059651563883624e-05,
-          "loss": 0.0057493346880222295
+          "huber_aileron": 1.9227699470025519,
+          "huber_elevator": 1.34080922868274,
+          "huber_rudder": 0.5777767546879602,
+          "huber_throttle": 0.18666210817670456,
+          "huber": 1.0070045103315175,
+          "smooth": 3.102779228516762e-05,
+          "loss": 1.0070048155337241
         },
         "val": {
-          "huber_aileron": 0.11725896879177927,
-          "huber_elevator": 0.05364704891425473,
-          "huber_rudder": 0.057734023144638,
-          "huber_throttle": 0.25534341037999114,
-          "huber": 0.12099586270580237,
-          "smooth": 4.4135833023019234e-05,
-          "loss": 0.12099806936578704
+          "huber_aileron": 9.0816958829136,
+          "huber_elevator": 6.522837387535322,
+          "huber_rudder": 3.2043464482377915,
+          "huber_throttle": 0.4121167868666227,
+          "huber": 4.80524912240657,
+          "smooth": 2.191392655150172e-05,
+          "loss": 4.8052493132128555
         }
       },
       {
         "epoch": 13,
         "train": {
-          "huber_aileron": 0.009254146352927376,
-          "huber_elevator": 0.003025933143943993,
-          "huber_rudder": 0.003998268754257938,
-          "huber_throttle": 0.0062718485398417494,
-          "huber": 0.005637549199708592,
-          "smooth": 7.017374487803873e-05,
-          "loss": 0.005641057883670072
+          "huber_aileron": 1.5851443205853875,
+          "huber_elevator": 1.2515807159888026,
+          "huber_rudder": 0.4720788505442563,
+          "huber_throttle": 0.1634845248448125,
+          "huber": 0.868072105644086,
+          "smooth": 3.809325057883679e-05,
+          "loss": 0.8680724826874049
         },
         "val": {
-          "huber_aileron": 0.11662600148324069,
-          "huber_elevator": 0.053210999515790544,
-          "huber_rudder": 0.05879715813986062,
-          "huber_throttle": 0.27184999007247873,
-          "huber": 0.12512103803818683,
-          "smooth": 3.163969257285943e-05,
-          "loss": 0.12512262030081314
+          "huber_aileron": 8.95748651037382,
+          "huber_elevator": 5.730997072603881,
+          "huber_rudder": 3.0671917951366816,
+          "huber_throttle": 0.4765343201316805,
+          "huber": 4.558052429013156,
+          "smooth": 4.624329316259767e-05,
+          "loss": 4.5580528700246
         }
       },
       {
         "epoch": 14,
         "train": {
-          "huber_aileron": 0.010322102331142117,
-          "huber_elevator": 0.005325845563922329,
-          "huber_rudder": 0.005078071981796587,
-          "huber_throttle": 0.015400272838946254,
-          "huber": 0.009031573181229305,
-          "smooth": 9.108516164148465e-05,
-          "loss": 0.009036127421115042
+          "huber_aileron": 1.4259778934329566,
+          "huber_elevator": 1.123835535761749,
+          "huber_rudder": 0.49931809481228484,
+          "huber_throttle": 0.1426443072134845,
+          "huber": 0.7979439559064222,
+          "smooth": 4.2705025957700614e-05,
+          "loss": 0.7979443805754218
         },
         "val": {
-          "huber_aileron": 0.11502139996616291,
-          "huber_elevator": 0.05884993109737172,
-          "huber_rudder": 0.05968865531031042,
-          "huber_throttle": 0.2606944808518732,
-          "huber": 0.12356361728645378,
-          "smooth": 6.257355186801748e-05,
-          "loss": 0.12356674656054223
+          "huber_aileron": 9.314576209467408,
+          "huber_elevator": 6.302293666681225,
+          "huber_rudder": 3.246119837117471,
+          "huber_throttle": 0.45992213692313544,
+          "huber": 4.830727961739978,
+          "smooth": 1.265468852386398e-05,
+          "loss": 4.8307280693404575
         }
       },
       {
         "epoch": 15,
         "train": {
-          "huber_aileron": 0.008063450570546606,
-          "huber_elevator": 0.0035319588205790916,
-          "huber_rudder": 0.003679940534837673,
-          "huber_throttle": 0.008429199532733056,
-          "huber": 0.005926137365081656,
-          "smooth": 7.814997226207251e-05,
-          "loss": 0.005930044855715329
+          "huber_aileron": 1.0938698169034167,
+          "huber_elevator": 0.9197946491312382,
+          "huber_rudder": 0.4244670729389127,
+          "huber_throttle": 0.13417175917691374,
+          "huber": 0.6430758244899233,
+          "smooth": 4.330567109880979e-05,
+          "loss": 0.6430762551872213
         },
         "val": {
-          "huber_aileron": 0.11426658167688225,
-          "huber_elevator": 0.05491268236867406,
-          "huber_rudder": 0.057768227247515236,
-          "huber_throttle": 0.25680248133305994,
-          "huber": 0.12093749341808936,
-          "smooth": 5.401937603703307e-05,
-          "loss": 0.1209401941174859
-        }
-      },
-      {
-        "epoch": 16,
-        "train": {
-          "huber_aileron": 0.007063444038504762,
-          "huber_elevator": 0.0026911281843158023,
-          "huber_rudder": 0.0030250571498847173,
-          "huber_throttle": 0.005138670349005714,
-          "huber": 0.004479574931968046,
-          "smooth": 6.749913392872247e-05,
-          "loss": 0.004482949890589105
-        },
-        "val": {
-          "huber_aileron": 0.1134861738431606,
-          "huber_elevator": 0.05374411296238518,
-          "huber_rudder": 0.05714532734399855,
-          "huber_throttle": 0.2569041023538871,
-          "huber": 0.1203199292339578,
-          "smooth": 5.290686076241636e-05,
-          "loss": 0.12032257333131773
-        }
-      },
-      {
-        "epoch": 17,
-        "train": {
-          "huber_aileron": 0.007117172234704721,
-          "huber_elevator": 0.00249921254492618,
-          "huber_rudder": 0.003005264525862159,
-          "huber_throttle": 0.004226272346342943,
-          "huber": 0.004211980408392049,
-          "smooth": 6.125507694300116e-05,
-          "loss": 0.004215043160682345
-        },
-        "val": {
-          "huber_aileron": 0.11522573658322625,
-          "huber_elevator": 0.05377526372684734,
-          "huber_rudder": 0.057013534795638025,
-          "huber_throttle": 0.2524314045712545,
-          "huber": 0.11961148413466652,
-          "smooth": 3.4861030569602436e-05,
-          "loss": 0.11961322829018456
-        }
-      },
-      {
-        "epoch": 18,
-        "train": {
-          "huber_aileron": 0.007306200894795641,
-          "huber_elevator": 0.002761523808781104,
-          "huber_rudder": 0.003285856398857771,
-          "huber_throttle": 0.004212740962347553,
-          "huber": 0.004391580516674987,
-          "smooth": 6.037298465732136e-05,
-          "loss": 0.0043945991612711535
-        },
-        "val": {
-          "huber_aileron": 0.11464918431275609,
-          "huber_elevator": 0.057007861043199555,
-          "huber_rudder": 0.05703900690725702,
-          "huber_throttle": 0.25961265968183034,
-          "huber": 0.12207717826444801,
-          "smooth": 5.114382929605199e-05,
-          "loss": 0.12207973574578472
-        }
-      },
-      {
-        "epoch": 19,
-        "train": {
-          "huber_aileron": 0.007591101446672676,
-          "huber_elevator": 0.0028509019805088524,
-          "huber_rudder": 0.003464819157802572,
-          "huber_throttle": 0.005388009158435663,
-          "huber": 0.004823707926924811,
-          "smooth": 6.50250633876549e-05,
-          "loss": 0.004826959186211332
-        },
-        "val": {
-          "huber_aileron": 0.11624267619698878,
-          "huber_elevator": 0.052127914361099335,
-          "huber_rudder": 0.0570941157433032,
-          "huber_throttle": 0.2558375246665598,
-          "huber": 0.12032555772427034,
-          "smooth": 4.882238075666677e-05,
-          "loss": 0.12032799882959429
-        }
-      },
-      {
-        "epoch": 20,
-        "train": {
-          "huber_aileron": 0.007936476901460507,
-          "huber_elevator": 0.0036195479545805946,
-          "huber_rudder": 0.0035729171048763135,
-          "huber_throttle": 0.007860678882158594,
-          "huber": 0.005747405173873783,
-          "smooth": 7.256249876576763e-05,
-          "loss": 0.0057510332915167856
-        },
-        "val": {
-          "huber_aileron": 0.11402478525656964,
-          "huber_elevator": 0.053443965975681997,
-          "huber_rudder": 0.05705475150841869,
-          "huber_throttle": 0.2549511358087471,
-          "huber": 0.1198686608884411,
-          "smooth": 4.1744759286090116e-05,
-          "loss": 0.11987074833308867
-        }
-      },
-      {
-        "epoch": 21,
-        "train": {
-          "huber_aileron": 0.007061217932542249,
-          "huber_elevator": 0.003171694581540719,
-          "huber_rudder": 0.0031962886544637218,
-          "huber_throttle": 0.006640431724712743,
-          "huber": 0.005017408248439087,
-          "smooth": 6.921495244987124e-05,
-          "loss": 0.005020868980411679
-        },
-        "val": {
-          "huber_aileron": 0.11346053657750901,
-          "huber_elevator": 0.05712015014943098,
-          "huber_rudder": 0.0571224177921457,
-          "huber_throttle": 0.2539318122344648,
-          "huber": 0.12040872901206376,
-          "smooth": 6.666943312217422e-05,
-          "loss": 0.1204120629080027
-        }
-      },
-      {
-        "epoch": 22,
-        "train": {
-          "huber_aileron": 0.005886411264613946,
-          "huber_elevator": 0.002460446695233672,
-          "huber_rudder": 0.0026150807374913806,
-          "huber_throttle": 0.003982524038484256,
-          "huber": 0.003736115686263263,
-          "smooth": 6.628895294564873e-05,
-          "loss": 0.0037394301394112653
-        },
-        "val": {
-          "huber_aileron": 0.11317933006998297,
-          "huber_elevator": 0.052881932077708645,
-          "huber_rudder": 0.056197211133881604,
-          "huber_throttle": 0.25566533109923073,
-          "huber": 0.11948095107082181,
-          "smooth": 4.9643827140527436e-05,
-          "loss": 0.11948343341438365
-        }
-      },
-      {
-        "epoch": 23,
-        "train": {
-          "huber_aileron": 0.0054335095690482005,
-          "huber_elevator": 0.0020085837574743957,
-          "huber_rudder": 0.002440877877126135,
-          "huber_throttle": 0.0030224172499520273,
-          "huber": 0.003226347108539562,
-          "smooth": 5.985895194824021e-05,
-          "loss": 0.0032293400504738337
-        },
-        "val": {
-          "huber_aileron": 0.11245715244243816,
-          "huber_elevator": 0.05527536946729841,
-          "huber_rudder": 0.05782229883797382,
-          "huber_throttle": 0.2578720006995,
-          "huber": 0.12085670592602003,
-          "smooth": 5.123184507295252e-05,
-          "loss": 0.12085926745619092
-        }
-      },
-      {
-        "epoch": 24,
-        "train": {
-          "huber_aileron": 0.006018054295201591,
-          "huber_elevator": 0.002050763550848329,
-          "huber_rudder": 0.0023894575856255114,
-          "huber_throttle": 0.002939222974678167,
-          "huber": 0.0033493745978844937,
-          "smooth": 5.6146486833127455e-05,
-          "loss": 0.0033521819211499645
-        },
-        "val": {
-          "huber_aileron": 0.11278014247458391,
-          "huber_elevator": 0.0523804790474922,
-          "huber_rudder": 0.05655114636786718,
-          "huber_throttle": 0.2548963565125384,
-          "huber": 0.11915203105573627,
-          "smooth": 4.570400125129555e-05,
-          "loss": 0.11915431608288705
-        }
-      },
-      {
-        "epoch": 25,
-        "train": {
-          "huber_aileron": 0.006554839939463583,
-          "huber_elevator": 0.0020116155702113274,
-          "huber_rudder": 0.00261982893076924,
-          "huber_throttle": 0.0032119625764883615,
-          "huber": 0.00359956174408035,
-          "smooth": 6.062696337822107e-05,
-          "loss": 0.003602593101152945
-        },
-        "val": {
-          "huber_aileron": 0.11211861057249321,
-          "huber_elevator": 0.05587371926778903,
-          "huber_rudder": 0.056268814698318265,
-          "huber_throttle": 0.26030791220678523,
-          "huber": 0.12114226488644475,
-          "smooth": 7.256817997432489e-05,
-          "loss": 0.12114589384986789
-        }
-      },
-      {
-        "epoch": 26,
-        "train": {
-          "huber_aileron": 0.005962760738788335,
-          "huber_elevator": 0.002032624036166702,
-          "huber_rudder": 0.0027149438041159145,
-          "huber_throttle": 0.0032592266363619567,
-          "huber": 0.0034923888111941183,
-          "smooth": 5.97701423108264e-05,
-          "loss": 0.003495377312468816
-        },
-        "val": {
-          "huber_aileron": 0.11138670923802155,
-          "huber_elevator": 0.05428965225802166,
-          "huber_rudder": 0.055298364141807804,
-          "huber_throttle": 0.2566148817067506,
-          "huber": 0.11939740200321396,
-          "smooth": 4.6803356999825825e-05,
-          "loss": 0.11939974153994934
-        }
-      },
-      {
-        "epoch": 27,
-        "train": {
-          "huber_aileron": 0.006648696249355125,
-          "huber_elevator": 0.0021069491270789952,
-          "huber_rudder": 0.0027635824796158736,
-          "huber_throttle": 0.00294666027357185,
-          "huber": 0.003616472021899074,
-          "smooth": 5.736247031298628e-05,
-          "loss": 0.0036193401472377584
-        },
-        "val": {
-          "huber_aileron": 0.1124486505838607,
-          "huber_elevator": 0.051898786676412616,
-          "huber_rudder": 0.05635999496867457,
-          "huber_throttle": 0.25509336590766907,
-          "huber": 0.11895020008570963,
-          "smooth": 4.119138011683154e-05,
-          "loss": 0.1189522605129312
-        }
-      },
-      {
-        "epoch": 28,
-        "train": {
-          "huber_aileron": 0.005875035288150666,
-          "huber_elevator": 0.0020490065673233857,
-          "huber_rudder": 0.0025603279647458794,
-          "huber_throttle": 0.0029416449200760884,
-          "huber": 0.0033565036756104654,
-          "smooth": 6.293765839156903e-05,
-          "loss": 0.003359650556574218
-        },
-        "val": {
-          "huber_aileron": 0.11220409206262874,
-          "huber_elevator": 0.0560382022065044,
-          "huber_rudder": 0.057019783656775055,
-          "huber_throttle": 0.25489178293251563,
-          "huber": 0.12003846628010853,
-          "smooth": 4.953393516944897e-05,
-          "loss": 0.12004094263810858
-        }
-      },
-      {
-        "epoch": 29,
-        "train": {
-          "huber_aileron": 0.005321699793228444,
-          "huber_elevator": 0.001873544974801479,
-          "huber_rudder": 0.002464473171651945,
-          "huber_throttle": 0.002933676171429529,
-          "huber": 0.0031483485305887422,
-          "smooth": 5.985863539763533e-05,
-          "loss": 0.0031513414516181207
-        },
-        "val": {
-          "huber_aileron": 0.11164377813678017,
-          "huber_elevator": 0.05283235523142162,
-          "huber_rudder": 0.05657961729886736,
-          "huber_throttle": 0.2523442240093242,
-          "huber": 0.11834999398394887,
-          "smooth": 3.979251897516252e-05,
-          "loss": 0.11835198375765331
-        }
-      },
-      {
-        "epoch": 30,
-        "train": {
-          "huber_aileron": 0.005682814832549708,
-          "huber_elevator": 0.002477073191766377,
-          "huber_rudder": 0.0025047327767851605,
-          "huber_throttle": 0.003952279075987091,
-          "huber": 0.00365422496915821,
-          "smooth": 6.27133542150448e-05,
-          "loss": 0.0036573606383867095
-        },
-        "val": {
-          "huber_aileron": 0.11321696671188579,
-          "huber_elevator": 0.0542134450236033,
-          "huber_rudder": 0.05725302093083269,
-          "huber_throttle": 0.2558478001843799,
-          "huber": 0.12013280828628543,
-          "smooth": 4.8148926128175973e-05,
-          "loss": 0.12013521611194622
+          "huber_aileron": 9.471730179706906,
+          "huber_elevator": 4.691487461006634,
+          "huber_rudder": 3.274002547655294,
+          "huber_throttle": 0.46903671876325215,
+          "huber": 4.476564206417046,
+          "smooth": 4.267887492274346e-05,
+          "loss": 4.476564600182748
         }
       }
     ],
@@ -779,230 +984,230 @@
       "val": {
         "gru": {
           "aileron": {
-            "mae": 0.04349926859140396,
-            "rmse": 0.07916313409805298,
-            "r2": -0.12364935874938965,
-            "pearson": 0.08001201906542496
+            "mae": 0.41232573986053467,
+            "rmse": 0.5094299912452698,
+            "r2": -0.2853015661239624,
+            "pearson": 0.06176139991890207
           },
           "elevator": {
-            "mae": 0.02737715095281601,
-            "rmse": 0.04786096140742302,
-            "r2": -0.16637349128723145,
-            "pearson": 0.060688171171052914
+            "mae": 0.3588753640651703,
+            "rmse": 0.4776124358177185,
+            "r2": -0.29959142208099365,
+            "pearson": 0.1978559397021591
           },
           "rudder": {
-            "mae": 0.035363487899303436,
-            "rmse": 0.08028994500637054,
-            "r2": -0.30009925365448,
-            "pearson": -0.1336727535899116
+            "mae": 0.31646862626075745,
+            "rmse": 0.42652368545532227,
+            "r2": -0.5142008066177368,
+            "pearson": 0.18671375630099585
           },
           "throttle": {
-            "mae": 0.08222377300262451,
-            "rmse": 0.1386125236749649,
-            "r2": -0.17311608791351318,
-            "pearson": -0.2630420400815365
+            "mae": 0.1492241472005844,
+            "rmse": 0.18069282174110413,
+            "r2": -0.35620200634002686,
+            "pearson": 0.24540655957389074
           }
         },
         "ridge": {
           "aileron": {
-            "mae": 0.03102775476872921,
-            "rmse": 0.07568462938070297,
-            "r2": -0.02707040309906006,
-            "pearson": 0.006760110130381438
+            "mae": 0.4764588177204132,
+            "rmse": 0.5861629247665405,
+            "r2": -0.7016596794128418,
+            "pearson": 0.010164370832668225
           },
           "elevator": {
-            "mae": 0.026174204424023628,
-            "rmse": 0.045991200953722,
-            "r2": -0.07702136039733887,
-            "pearson": 0.0007090925586817932
+            "mae": 0.46303051710128784,
+            "rmse": 0.5656754970550537,
+            "r2": -0.8230153322219849,
+            "pearson": 0.003180000059191172
           },
           "rudder": {
-            "mae": 0.028643861413002014,
-            "rmse": 0.07215307652950287,
-            "r2": -0.04993855953216553,
-            "pearson": -0.02139872242350449
+            "mae": 0.36461305618286133,
+            "rmse": 0.438852459192276,
+            "r2": -0.6030025482177734,
+            "pearson": 0.005089014633541951
           },
           "throttle": {
-            "mae": 0.07956505566835403,
-            "rmse": 0.13085176050662994,
-            "r2": -0.04543042182922363,
-            "pearson": 0.0042995856403058195
+            "mae": 0.17734068632125854,
+            "rmse": 0.22278445959091187,
+            "r2": -1.0616381168365479,
+            "pearson": -0.008696831391837237
           }
         },
         "mean": {
           "aileron": {
-            "mae": 0.026526838541030884,
-            "rmse": 0.07470275461673737,
-            "r2": -0.0005943775177001953,
-            "pearson": NaN
+            "mae": 0.3800714612007141,
+            "rmse": 0.45742473006248474,
+            "r2": -0.03627574443817139,
+            "pearson": null
           },
           "elevator": {
-            "mae": 0.024137750267982483,
-            "rmse": 0.044317252933979034,
-            "r2": -4.7087669372558594e-05,
-            "pearson": NaN
+            "mae": 0.38772037625312805,
+            "rmse": 0.4450710713863373,
+            "r2": -0.12853312492370605,
+            "pearson": null
           },
           "rudder": {
-            "mae": 0.021008139476180077,
-            "rmse": 0.07074770331382751,
-            "r2": -0.00943613052368164,
-            "pearson": NaN
+            "mae": 0.30966487526893616,
+            "rmse": 0.34975379705429077,
+            "r2": -0.018174052238464355,
+            "pearson": null
           },
           "throttle": {
-            "mae": 0.07054488360881805,
-            "rmse": 0.12799327075481415,
-            "r2": -0.00025403499603271484,
-            "pearson": NaN
+            "mae": 0.11817166954278946,
+            "rmse": 0.1551741510629654,
+            "r2": -0.00018739700317382812,
+            "pearson": null
           }
         },
         "episodes": [
           {
-            "episode_id": 7,
-            "n": 5401,
+            "episode_id": 69,
+            "n": 4067,
             "gru": {
               "aileron": {
-                "mae": 0.04584962874650955,
-                "rmse": 0.08625772595405579,
-                "r2": -0.013510704040527344,
-                "pearson": 0.12195283634412019
+                "mae": 0.30906355381011963,
+                "rmse": 0.34953373670578003,
+                "r2": -0.20791757106781006,
+                "pearson": -0.21314181485577008
               },
               "elevator": {
-                "mae": 0.023952705785632133,
-                "rmse": 0.04120699316263199,
-                "r2": 0.16608834266662598,
-                "pearson": 0.41170106944325474
+                "mae": 0.2985653281211853,
+                "rmse": 0.4813138246536255,
+                "r2": 0.03326416015625,
+                "pearson": 0.4611836444885102
               },
               "rudder": {
-                "mae": 0.04293367266654968,
-                "rmse": 0.09963769465684891,
-                "r2": -0.4982694387435913,
-                "pearson": -0.4898895249042082
+                "mae": 0.05655854940414429,
+                "rmse": 0.07856437563896179,
+                "r2": 0.4701840877532959,
+                "pearson": 0.7242842127140894
               },
               "throttle": {
-                "mae": 0.07520149648189545,
-                "rmse": 0.12799805402755737,
-                "r2": -0.24238073825836182,
-                "pearson": -0.4155868737377107
+                "mae": 0.10298836976289749,
+                "rmse": 0.13283595442771912,
+                "r2": 0.06298643350601196,
+                "pearson": 0.3076468496963105
               }
             }
           },
           {
-            "episode_id": 39,
-            "n": 5293,
+            "episode_id": 78,
+            "n": 2292,
             "gru": {
               "aileron": {
-                "mae": 0.04319468140602112,
-                "rmse": 0.08482815325260162,
-                "r2": -0.04488718509674072,
-                "pearson": 0.3874779406189671
+                "mae": 0.24915508925914764,
+                "rmse": 0.26366153359413147,
+                "r2": -1598.417236328125,
+                "pearson": 0.4150594048796794
               },
               "elevator": {
-                "mae": 0.029323022812604904,
-                "rmse": 0.04970381781458855,
-                "r2": -0.42608845233917236,
-                "pearson": -0.2362570469781128
+                "mae": 0.15775182843208313,
+                "rmse": 0.19185571372509003,
+                "r2": -0.09441375732421875,
+                "pearson": 0.2148248494770001
               },
               "rudder": {
-                "mae": 0.026826312765479088,
-                "rmse": 0.053770266473293304,
-                "r2": 0.1912657618522644,
-                "pearson": 0.45884167012566984
+                "mae": 0.11077883839607239,
+                "rmse": 0.13506624102592468,
+                "r2": -20539668168704.0,
+                "pearson": null
               },
               "throttle": {
-                "mae": 0.07092572003602982,
-                "rmse": 0.13003161549568176,
-                "r2": -0.0794215202331543,
-                "pearson": -0.09355321360994862
+                "mae": 0.20339946448802948,
+                "rmse": 0.2276933640241623,
+                "r2": -3.7015633583068848,
+                "pearson": 0.22545018098163064
               }
             }
           },
           {
-            "episode_id": 49,
-            "n": 5437,
+            "episode_id": 59,
+            "n": 3702,
             "gru": {
               "aileron": {
-                "mae": 0.043794721364974976,
-                "rmse": 0.07564596831798553,
-                "r2": -0.33716392517089844,
-                "pearson": -0.17005327766309156
+                "mae": 0.5334168672561646,
+                "rmse": 0.7098453044891357,
+                "r2": -0.45755648612976074,
+                "pearson": 0.15489664178047394
               },
               "elevator": {
-                "mae": 0.030611449852585793,
-                "rmse": 0.056634631007909775,
-                "r2": -0.5142651796340942,
-                "pearson": -0.38079578923161156
+                "mae": 0.3260684907436371,
+                "rmse": 0.5049593448638916,
+                "r2": -0.01926243305206299,
+                "pearson": 0.43903782569548105
               },
               "rudder": {
-                "mae": 0.019824177026748657,
-                "rmse": 0.05489296093583107,
-                "r2": -1.058708667755127,
-                "pearson": -0.4348483290315112
+                "mae": 0.5792566537857056,
+                "rmse": 0.6775755882263184,
+                "r2": -1.986929178237915,
+                "pearson": 0.2855973718805201
               },
               "throttle": {
-                "mae": 0.07758773863315582,
-                "rmse": 0.1261570155620575,
-                "r2": -0.7150939702987671,
-                "pearson": -0.039792228351131484
+                "mae": 0.14408551156520844,
+                "rmse": 0.17744889855384827,
+                "r2": -0.23213624954223633,
+                "pearson": 0.2019764497063028
               }
             }
           },
           {
-            "episode_id": 5,
-            "n": 5130,
+            "episode_id": 54,
+            "n": 3148,
             "gru": {
               "aileron": {
-                "mae": 0.04478929191827774,
-                "rmse": 0.08279001712799072,
-                "r2": -0.18472862243652344,
-                "pearson": -0.25661447449480795
+                "mae": 0.4411177337169647,
+                "rmse": 0.5939176678657532,
+                "r2": -0.11301672458648682,
+                "pearson": 0.44536509641932837
               },
               "elevator": {
-                "mae": 0.031863730400800705,
-                "rmse": 0.04958191514015198,
-                "r2": -0.35619163513183594,
-                "pearson": -0.00893781321096213
+                "mae": 0.26889950037002563,
+                "rmse": 0.3969900608062744,
+                "r2": 0.05395585298538208,
+                "pearson": 0.2874227083980152
               },
               "rudder": {
-                "mae": 0.05860476195812225,
-                "rmse": 0.12198818475008011,
-                "r2": -0.589393138885498,
-                "pearson": -0.559271110271564
+                "mae": 0.31941351294517517,
+                "rmse": 0.4464149475097656,
+                "r2": -0.17224764823913574,
+                "pearson": 0.4755095183219506
               },
               "throttle": {
-                "mae": 0.06579121947288513,
-                "rmse": 0.12383347749710083,
-                "r2": -0.2996169328689575,
-                "pearson": -0.11854453298870887
+                "mae": 0.17826992273330688,
+                "rmse": 0.23104606568813324,
+                "r2": -0.3502737283706665,
+                "pearson": 0.06107422026216653
               }
             }
           },
           {
-            "episode_id": 14,
-            "n": 5235,
+            "episode_id": 29,
+            "n": 5215,
             "gru": {
               "aileron": {
-                "mae": 0.03981133550405502,
-                "rmse": 0.06408262252807617,
-                "r2": -0.296345591545105,
-                "pearson": 0.19394010084409535
+                "mae": 0.46123045682907104,
+                "rmse": 0.469465970993042,
+                "r2": -28.768146514892578,
+                "pearson": 0.39116452476650815
               },
               "elevator": {
-                "mae": 0.0211870688945055,
-                "rmse": 0.040047649294137955,
-                "r2": 0.20119351148605347,
-                "pearson": 0.4788944219570088
+                "mae": 0.571905255317688,
+                "rmse": 0.5769872069358826,
+                "r2": -184.42897033691406,
+                "pearson": 0.17810210026139603
               },
               "rudder": {
-                "mae": 0.029548821970820427,
-                "rmse": 0.041830141097307205,
-                "r2": 0.224010169506073,
-                "pearson": 0.6166022043653717
+                "mae": 0.4212401807308197,
+                "rmse": 0.42856982350349426,
+                "r2": -72.01424407958984,
+                "pearson": 0.16088526547984733
               },
               "throttle": {
-                "mae": 0.12180982530117035,
-                "rmse": 0.17801642417907715,
-                "r2": -0.19256329536437988,
-                "pearson": -0.5545266610706814
+                "mae": 0.14758624136447906,
+                "rmse": 0.15564444661140442,
+                "r2": -0.9358299970626831,
+                "pearson": 0.38670187341508855
               }
             }
           }
@@ -1011,140 +1216,140 @@
       "test": {
         "gru": {
           "aileron": {
-            "mae": 0.03705328330397606,
-            "rmse": 0.06900420039892197,
-            "r2": -0.16839003562927246,
-            "pearson": 0.10341627387250187
+            "mae": 0.4300110638141632,
+            "rmse": 0.5007805824279785,
+            "r2": -0.7392884492874146,
+            "pearson": -0.1594005042104464
           },
           "elevator": {
-            "mae": 0.033340420573949814,
-            "rmse": 0.051430415362119675,
-            "r2": -0.11532139778137207,
-            "pearson": 0.12055071390685958
+            "mae": 0.45771968364715576,
+            "rmse": 0.5280922055244446,
+            "r2": -1.0250117778778076,
+            "pearson": -0.28324888353473915
           },
           "rudder": {
-            "mae": 0.026533251628279686,
-            "rmse": 0.05271315202116966,
-            "r2": -0.06458783149719238,
-            "pearson": 0.1979917436728335
+            "mae": 0.34794947504997253,
+            "rmse": 0.4125487804412842,
+            "r2": -1.4987657070159912,
+            "pearson": -0.23999785238460405
           },
           "throttle": {
-            "mae": 0.112128347158432,
-            "rmse": 0.1570008397102356,
-            "r2": -0.26434326171875,
-            "pearson": -0.27261005421948836
+            "mae": 0.16557849943637848,
+            "rmse": 0.19694826006889343,
+            "r2": -0.3200089931488037,
+            "pearson": 0.305256451874392
           }
         },
         "ridge": {
           "aileron": {
-            "mae": 0.02764522098004818,
-            "rmse": 0.06512600928544998,
-            "r2": -0.0407482385635376,
-            "pearson": -0.0005401187491404164
+            "mae": 0.424180805683136,
+            "rmse": 0.5297781825065613,
+            "r2": -0.9465469121932983,
+            "pearson": 0.005447050683091144
           },
           "elevator": {
-            "mae": 0.032388992607593536,
-            "rmse": 0.05057986453175545,
-            "r2": -0.07873642444610596,
-            "pearson": 0.0007687268010161361
+            "mae": 0.4172380864620209,
+            "rmse": 0.5195475220680237,
+            "r2": -0.96001136302948,
+            "pearson": -0.009031962338043435
           },
           "rudder": {
-            "mae": 0.0214157085865736,
-            "rmse": 0.052791982889175415,
-            "r2": -0.06777417659759521,
-            "pearson": 0.008237368143336931
+            "mae": 0.3038197159767151,
+            "rmse": 0.3783966898918152,
+            "r2": -1.1021783351898193,
+            "pearson": -0.008214315201025578
           },
           "throttle": {
-            "mae": 0.09860780835151672,
-            "rmse": 0.14239536225795746,
-            "r2": -0.0400463342666626,
-            "pearson": 0.05753429891222487
+            "mae": 0.18619513511657715,
+            "rmse": 0.23327817022800446,
+            "r2": -0.8519139289855957,
+            "pearson": 0.016246130894234694
           }
         },
         "mean": {
           "aileron": {
-            "mae": 0.023769168183207512,
-            "rmse": 0.06384620815515518,
-            "r2": -0.00024628639221191406,
-            "pearson": NaN
+            "mae": 0.28822600841522217,
+            "rmse": 0.3803959786891937,
+            "r2": -0.0035719871520996094,
+            "pearson": null
           },
           "elevator": {
-            "mae": 0.030843304470181465,
-            "rmse": 0.04903796315193176,
-            "r2": -0.0139693021774292,
-            "pearson": NaN
+            "mae": 0.31212669610977173,
+            "rmse": 0.3769684135913849,
+            "r2": -0.031853437423706055,
+            "pearson": null
           },
           "rudder": {
-            "mae": 0.01400867011398077,
-            "rmse": 0.051472652703523636,
-            "r2": -0.015071392059326172,
-            "pearson": NaN
+            "mae": 0.2139749526977539,
+            "rmse": 0.26414331793785095,
+            "r2": -0.02436363697052002,
+            "pearson": null
           },
           "throttle": {
-            "mae": 0.09451647847890854,
-            "rmse": 0.14134953916072845,
-            "r2": -0.024825334548950195,
-            "pearson": NaN
+            "mae": 0.1306556910276413,
+            "rmse": 0.17210133373737335,
+            "r2": -0.007954716682434082,
+            "pearson": null
           }
         },
         "episodes": [
-          {
-            "episode_id": 29,
-            "n": 5215,
-            "gru": {
-              "aileron": {
-                "mae": 0.043370459228754044,
-                "rmse": 0.09116526693105698,
-                "r2": -0.12254142761230469,
-                "pearson": -0.09686252212864643
-              },
-              "elevator": {
-                "mae": 0.028034670278429985,
-                "rmse": 0.043625570833683014,
-                "r2": -0.06005263328552246,
-                "pearson": 0.2201488372182864
-              },
-              "rudder": {
-                "mae": 0.02996327541768551,
-                "rmse": 0.06809747964143753,
-                "r2": -0.8434290885925293,
-                "pearson": -0.40299098094086133
-              },
-              "throttle": {
-                "mae": 0.07096321880817413,
-                "rmse": 0.12530791759490967,
-                "r2": -0.2547494173049927,
-                "pearson": -0.16111238553498064
-              }
-            }
-          },
           {
             "episode_id": 41,
             "n": 5155,
             "gru": {
               "aileron": {
-                "mae": 0.037816595286130905,
-                "rmse": 0.04856521263718605,
-                "r2": -0.7294129133224487,
-                "pearson": 0.1317870389688813
+                "mae": 0.4411945939064026,
+                "rmse": 0.4529705345630646,
+                "r2": -149.4485321044922,
+                "pearson": -0.17007600333314873
               },
               "elevator": {
-                "mae": 0.02230612374842167,
-                "rmse": 0.04202321916818619,
-                "r2": 0.22885483503341675,
-                "pearson": 0.4909375099461546
+                "mae": 0.5554125905036926,
+                "rmse": 0.5644431710243225,
+                "r2": -138.1226806640625,
+                "pearson": -0.003254467100332017
               },
               "rudder": {
-                "mae": 0.02296745777130127,
-                "rmse": 0.031396783888339996,
-                "r2": -2.1740057468414307,
-                "pearson": 0.22145845303380476
+                "mae": 0.3952624499797821,
+                "rmse": 0.4073285162448883,
+                "r2": -533.2284545898438,
+                "pearson": -0.1945214948037198
               },
               "throttle": {
-                "mae": 0.10990427434444427,
-                "rmse": 0.16267140209674835,
-                "r2": -0.09833955764770508,
-                "pearson": -0.34562845610391024
+                "mae": 0.1897384226322174,
+                "rmse": 0.2088497430086136,
+                "r2": -0.8104315996170044,
+                "pearson": 0.6150048446433175
+              }
+            }
+          },
+          {
+            "episode_id": 56,
+            "n": 4205,
+            "gru": {
+              "aileron": {
+                "mae": 0.47219809889793396,
+                "rmse": 0.6528065800666809,
+                "r2": -0.3833796977996826,
+                "pearson": -0.17600504671406772
+              },
+              "elevator": {
+                "mae": 0.4536450505256653,
+                "rmse": 0.641975462436676,
+                "r2": -0.28303682804107666,
+                "pearson": 0.31281889173618593
+              },
+              "rudder": {
+                "mae": 0.359199196100235,
+                "rmse": 0.5147016048431396,
+                "r2": -0.8491573333740234,
+                "pearson": -0.2609709101860967
+              },
+              "throttle": {
+                "mae": 0.14371317625045776,
+                "rmse": 0.18315280973911285,
+                "r2": 0.004739701747894287,
+                "pearson": 0.11228901631257218
               }
             }
           },
@@ -1153,88 +1358,88 @@
             "n": 5534,
             "gru": {
               "aileron": {
-                "mae": 0.047287046909332275,
-                "rmse": 0.08404728770256042,
-                "r2": -0.15466773509979248,
-                "pearson": 0.2970801556297149
+                "mae": 0.4287354648113251,
+                "rmse": 0.43873268365859985,
+                "r2": -30.463687896728516,
+                "pearson": -0.3304544650371265
               },
               "elevator": {
-                "mae": 0.024359868839383125,
-                "rmse": 0.04099588096141815,
-                "r2": 0.1948654055595398,
-                "pearson": 0.4430159065725027
+                "mae": 0.5515972375869751,
+                "rmse": 0.5584469437599182,
+                "r2": -148.4004364013672,
+                "pearson": -0.17261881613459246
               },
               "rudder": {
-                "mae": 0.03772560879588127,
-                "rmse": 0.07651906460523605,
-                "r2": 0.1643388271331787,
-                "pearson": 0.4797023776559371
+                "mae": 0.37408342957496643,
+                "rmse": 0.3911341428756714,
+                "r2": -20.834455490112305,
+                "pearson": -0.46345855573720146
               },
               "throttle": {
-                "mae": 0.10675418376922607,
-                "rmse": 0.16492833197116852,
-                "r2": -0.18064379692077637,
-                "pearson": -0.5839761899669714
+                "mae": 0.18739831447601318,
+                "rmse": 0.21447299420833588,
+                "r2": -0.9965195655822754,
+                "pearson": 0.08679322220879727
               }
             }
           },
           {
-            "episode_id": 15,
-            "n": 4748,
+            "episode_id": 79,
+            "n": 3070,
             "gru": {
               "aileron": {
-                "mae": 0.03000285103917122,
-                "rmse": 0.0683918371796608,
-                "r2": -0.03423047065734863,
-                "pearson": 0.17225947205909875
+                "mae": 0.24625864624977112,
+                "rmse": 0.2756417393684387,
+                "r2": -0.7081679105758667,
+                "pearson": -0.17666499778512268
               },
               "elevator": {
-                "mae": 0.049574755132198334,
-                "rmse": 0.06734813749790192,
-                "r2": -0.6565535068511963,
-                "pearson": -0.3447750255285038
+                "mae": 0.13936473429203033,
+                "rmse": 0.16434070467948914,
+                "r2": -0.2821265459060669,
+                "pearson": 0.5291823038076556
               },
               "rudder": {
-                "mae": 0.02756587602198124,
-                "rmse": 0.03669045493006706,
-                "r2": 0.22710871696472168,
-                "pearson": 0.6408295705873919
+                "mae": 0.09771163761615753,
+                "rmse": 0.12394718825817108,
+                "r2": -4.313869953155518,
+                "pearson": 0.6467569151894303
               },
               "throttle": {
-                "mae": 0.15021494030952454,
-                "rmse": 0.1698032170534134,
-                "r2": -3.5242385864257812,
-                "pearson": 0.0530584304148478
+                "mae": 0.14116910099983215,
+                "rmse": 0.1735132336616516,
+                "r2": -0.0598607063293457,
+                "pearson": 0.3534579350747281
               }
             }
           },
           {
-            "episode_id": 31,
-            "n": 5133,
+            "episode_id": 95,
+            "n": 3127,
             "gru": {
               "aileron": {
-                "mae": 0.025356976315379143,
-                "rmse": 0.03412100300192833,
-                "r2": -2.2789955139160156,
-                "pearson": -0.04735304102496671
+                "mae": 0.5375043749809265,
+                "rmse": 0.6040714383125305,
+                "r2": -0.17216050624847412,
+                "pearson": -0.328946637814507
               },
               "elevator": {
-                "mae": 0.04447797313332558,
-                "rmse": 0.05977153778076172,
-                "r2": -0.49083220958709717,
-                "pearson": -0.12857815990457458
+                "mae": 0.44856035709381104,
+                "rmse": 0.47237154841423035,
+                "r2": -5.3404645919799805,
+                "pearson": 0.08410340845342641
               },
               "rudder": {
-                "mae": 0.01360759325325489,
-                "rmse": 0.026442574337124825,
-                "r2": -3.5513157844543457,
-                "pearson": -0.49047128251156974
+                "mae": 0.4542499780654907,
+                "rmse": 0.48202335834503174,
+                "r2": -1.1740429401397705,
+                "pearson": -0.2794273018354393
               },
               "throttle": {
-                "mae": 0.12674880027770996,
-                "rmse": 0.1590515375137329,
-                "r2": -1.9075672626495361,
-                "pearson": -0.0847332284384754
+                "mae": 0.14050175249576569,
+                "rmse": 0.18341681361198425,
+                "r2": -0.7384780645370483,
+                "pearson": 0.0806721513485183
               }
             }
           }
@@ -1244,31 +1449,33 @@
         "per_control": {
           "aileron": {
             "mae_lower": false,
-            "pearson_higher": true
+            "pearson_higher": false
           },
           "elevator": {
             "mae_lower": false,
-            "pearson_higher": true
+            "pearson_higher": false
           },
           "rudder": {
             "mae_lower": false,
-            "pearson_higher": true
+            "pearson_higher": false
           },
           "throttle": {
-            "mae_lower": false,
-            "pearson_higher": false
+            "mae_lower": true,
+            "pearson_higher": true
           }
         },
-        "mae_wins": 0,
+        "mae_wins": 1,
         "material": false
       },
       "mean_action": [
-        0.05383661389350891,
-        0.07271666824817657,
-        0.0035572450142353773,
-        0.3629455864429474
+        0.16372832655906677,
+        0.2247907668352127,
+        0.08315505087375641,
+        0.3514605462551117
       ],
-      "plots_dir": "artifacts/decoder/plots"
+      "ridge_fit_rows": 4997,
+      "plots_dir": "artifacts/decoder/candidates/dagger-full/plots"
     }
-  }
+  },
+  "checkpoint_sha256": "016fae3440489f6e0a75361ad7a17a82b98c43751ed591866313cf9e9fc87ddb"
 }
